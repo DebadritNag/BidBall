@@ -346,26 +346,45 @@ const useAuction = (
         setStatus('unsold');
         updateAuctioneerMessage({ eventType: 'PLAYER_UNSOLD', playerName: player.name });
         // Remove unsold player from the unsold list for re-auction consideration
-        // Don't decrement index here - nextPlayer will handle it
-        setUnsoldPlayers(prev => prev.filter((_, index) => index !== currentPlayerIndex));
+        const updatedUnsoldPlayers = unsoldPlayers.filter((_, index) => index !== currentPlayerIndex);
+        setUnsoldPlayers(updatedUnsoldPlayers);
+        
+        // DON'T increment index - the next player is now at the same index
+        // Reset to bidding on the same index (which is now the next player)
+        if (updatedUnsoldPlayers.length > 0) {
+          // Ensure index is valid after removal
+          const nextIndex = currentPlayerIndex >= updatedUnsoldPlayers.length ? updatedUnsoldPlayers.length - 1 : currentPlayerIndex;
+          setCurrentPlayerIndex(nextIndex);
+          const nextPlayerToAuction = updatedUnsoldPlayers[nextIndex];
+          
+          if (nextPlayerToAuction) {
+            setStatus('bidding');
+            setCurrentBid(nextPlayerToAuction.basePrice);
+            setHighestBidder(null);
+            setSkippedTeams(new Set());
+            resetTimer();
+            updateAuctioneerMessage({ eventType: 'NEW_PLAYER', playerName: nextPlayerToAuction.name, basePrice: nextPlayerToAuction.basePrice });
+          }
+        }
         
         // Sync unsold status to database in multiplayer mode
         if (roomCode) {
           console.log('[Unsold Sync] Syncing unsold status to database');
-          const updatedUnsoldPlayers = unsoldPlayers.filter((_, index) => index !== currentPlayerIndex);
           const auctionState = {
-            currentPlayerIndex,
-            currentBid,
+            currentPlayerIndex: currentPlayerIndex >= updatedUnsoldPlayers.length ? updatedUnsoldPlayers.length - 1 : currentPlayerIndex,
+            currentBid: updatedUnsoldPlayers[currentPlayerIndex >= updatedUnsoldPlayers.length ? updatedUnsoldPlayers.length - 1 : currentPlayerIndex]?.basePrice || 0,
             highestBidder: null,
             highestBidderName: null,
-            timer: 0,
+            timer: BIDDING_TIME,
             teams,
             unsoldPlayers: updatedUnsoldPlayers,
-            status: 'unsold'
+            status: 'bidding'
           };
           await multiplayerService.updateAuctionState(roomCode, auctionState);
           console.log('[Unsold Sync] Sync complete');
         }
+        
+        return; // Don't call nextPlayer - we already moved to the next player
     }
 
     setTimeout(nextPlayer, POST_SALE_DELAY);

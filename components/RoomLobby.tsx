@@ -297,6 +297,16 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
   };
 
   const handleStart = async () => {
+    // FIRST: Fetch latest room data to get all locked teams
+    const latestRoom = await multiplayerService.getRoomByCode(roomCode);
+    if (!latestRoom) {
+      setMessages(prev => [...prev, { sender: 'System', text: 'Error: Room not found', isUser: false }]);
+      return;
+    }
+    
+    const latestPlayers = Array.isArray(latestRoom.players) ? latestRoom.players : [];
+    console.log('[Start Auction] Latest players from database:', latestPlayers);
+    
     let userTeamDetails: Omit<Team, 'budget' | 'players' | 'isAI' | 'isUser'>;
 
     if (selectedTeamId === CUSTOM_TEAM_ID) {
@@ -313,9 +323,9 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
       userTeamDetails = TEAMS.find(t => t.id === selectedTeamId)!;
     }
     
-    // FIRST: Update the room with team selections from all players
+    // Update the host's team selection in the room if not already done
     try {
-      const updatedPlayers = roomPlayers.map(player => 
+      const updatedPlayers = latestPlayers.map(player => 
         player.username === username 
           ? { ...player, teamId: userTeamDetails.id, teamName: userTeamDetails.name }
           : player
@@ -345,9 +355,9 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
       isAI: false 
     };
     
-    // Build teams list using team selections from room players
+    // Build teams list using team selections from LATEST room players
     // DO NOT set isUser here - each client will determine their own team
-    const allTeamsForAuction: Team[] = roomPlayers.map(player => {
+    const allTeamsForAuction: Team[] = latestPlayers.map(player => {
       // Check if this player has locked their team
       if (player.teamId && player.teamName) {
         // Use locked team info
