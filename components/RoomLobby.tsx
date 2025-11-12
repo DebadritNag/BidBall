@@ -47,8 +47,13 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
         }
 
         if (room) {
-          setRoomPlayers(room.players);
+          console.log('Room initialized:', room);
+          const players = Array.isArray(room.players) ? room.players : [];
+          console.log('Room players:', players);
+          setRoomPlayers(players);
           setMessages([{ sender: 'System', text: `Welcome to the lobby, ${username}!`, isUser: false }]);
+        } else {
+          console.log('No room returned from service');
         }
       } catch (error) {
         console.error('Error initializing room:', error);
@@ -63,7 +68,9 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
       try {
         const room = await multiplayerService.getRoomByCode(roomCode);
         if (room) {
-          setRoomPlayers(room.players);
+          const players = Array.isArray(room.players) ? room.players : [];
+          console.log('Polled room players:', players);
+          setRoomPlayers(players);
           
           // Check if auction has started
           if (room.status === 'auction_started' && room.auction_teams && room.auction_teams.length > 0) {
@@ -123,7 +130,7 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
     };
     setMessages(prev => [...prev, newMessage]);
     setChatInput('');
-  };;
+  };
 
   const handleStart = async () => {
     if (!selectedTeamId) return;

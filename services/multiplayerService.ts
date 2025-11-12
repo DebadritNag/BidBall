@@ -66,12 +66,15 @@ export const multiplayerService = {
       const room = await multiplayerService.getRoomByCode(roomCode);
       if (!room) return null;
 
+      // Ensure players is an array
+      const currentPlayers = Array.isArray(room.players) ? room.players : [];
+      
       // Check if player already exists
-      const playerExists = room.players.some(p => p.username === username);
+      const playerExists = currentPlayers.some((p: any) => p.username === username);
       if (playerExists) return room;
 
       // Add new player
-      const updatedPlayers = [...room.players, { username, isHost: false }];
+      const updatedPlayers = [...currentPlayers, { username, isHost: false }];
       
       const { data, error } = await supabase
         .from('rooms')
@@ -94,7 +97,9 @@ export const multiplayerService = {
       const room = await multiplayerService.getRoomByCode(roomCode);
       if (!room) return;
 
-      const updatedPlayers = room.players.filter(p => p.username !== username);
+      // Ensure players is an array
+      const currentPlayers = Array.isArray(room.players) ? room.players : [];
+      const updatedPlayers = currentPlayers.filter((p: any) => p.username !== username);
       
       if (updatedPlayers.length === 0) {
         // Delete room if no players left
