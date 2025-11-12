@@ -340,19 +340,21 @@ const useAuction = (
         triggerAIBehavior();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [highestBidder, currentPlayerIndex, status]);
+  }, [highestBidder, currentPlayerIndex, status, teams, currentBid]);
 
-  const handleUserBid = () => {
+  const handleUserBid = useCallback(() => {
     // MULTIPLAYER: This would emit a 'place-bid' event to the server.
     // e.g., socket.emit('place-bid', { teamId: userTeamId, amount: currentBid + BID_INCREMENT });
+    if (status !== 'bidding') return;
     placeBid(userTeamId, currentBid + BID_INCREMENT);
-  };
+  }, [userTeamId, status, currentBid, placeBid]);
   
-  const handleUserSkip = () => {
+  const handleUserSkip = useCallback(() => {
     // MULTIPLAYER: This would emit a 'skip-player' event to the server.
     // e.g., socket.emit('skip-player', { teamId: userTeamId });
+    if (status !== 'bidding') return;
     skipPlayer(userTeamId);
-  }
+  }, [userTeamId, status, skipPlayer]);
 
   const toggleMute = () => setIsMuted(prev => !prev);
   

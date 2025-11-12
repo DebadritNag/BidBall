@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Team, ChatMessage } from '../types';
@@ -7,6 +8,7 @@ import Title from './Title';
 interface RoomLobbyProps {
   roomCode: string;
   username: string;
+  isHost: boolean;
   onStartAuction: (teams: Team[], userTeam: Team) => void;
   onBack: () => void;
 }
@@ -27,33 +29,29 @@ const MOCK_CHAT_MESSAGES = [
 const CUSTOM_TEAM_ID = 'custom';
 const CUSTOM_TEAM_LOGO = 'https://img.icons8.com/plasticine/100/football.png';
 
-const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, onStartAuction, onBack }) => {
+const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onStartAuction, onBack }) => {
   const allTeamOptions = useMemo(() => [
     ...TEAMS,
     { id: CUSTOM_TEAM_ID, name: 'Custom Team', logo: CUSTOM_TEAM_LOGO }
   ], []);
 
-  const takenTeams = useMemo(() => MOCK_PLAYERS.map(p => p.teamId), []);
+  const takenTeams = useMemo(() => [], []);
 
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [customTeamName, setCustomTeamName] = useState('');
+  const [roomPlayers, setRoomPlayers] = useState<Array<{username: string, isHost: boolean}>>([]);
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const chatContainerRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
+    // Initialize room players list with current user
+    setRoomPlayers([{ username, isHost }]);
+  }, [username, isHost]);
+
+  useEffect(() => {
     setMessages([{ sender: 'System', text: `Welcome to the lobby, ${username}!`, isUser: false }]);
-
-    const chatInterval = setInterval(() => {
-        const randomBot = MOCK_PLAYERS[Math.floor(Math.random() * MOCK_PLAYERS.length)];
-        const randomMessage = MOCK_CHAT_MESSAGES[Math.floor(Math.random() * MOCK_CHAT_MESSAGES.length)];
-        
-        setMessages(prev => [...prev, { sender: randomBot.username, text: randomMessage, isUser: false }]);
-
-    }, 7000 + Math.random() * 3000);
-
-    return () => clearInterval(chatInterval);
   }, [username]);
   
   useEffect(() => {
@@ -73,11 +71,6 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, onStartAuctio
     };
     setMessages(prev => [...prev, newMessage]);
     setChatInput('');
-
-    setTimeout(() => {
-        const randomBot = MOCK_PLAYERS[Math.floor(Math.random() * MOCK_PLAYERS.length)];
-        setMessages(prev => [...prev, { sender: randomBot.username, text: "Interesting...", isUser: false }]);
-    }, 1500);
   };
 
 
@@ -98,12 +91,8 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, onStartAuctio
     
     const userTeamForAuction: Team = { ...userTeamDetails, budget: INITIAL_BUDGET, players: [], isUser: true, isAI: false };
     
-    const aiTeamsForAuction: Team[] = MOCK_PLAYERS.map(player => {
-        const teamDetails = TEAMS.find(t => t.id === player.teamId)!;
-        return { ...teamDetails, budget: INITIAL_BUDGET, players: [], isUser: false, isAI: true };
-    });
-
-    const allTeamsForAuction = [userTeamForAuction, ...aiTeamsForAuction];
+    // In multiplayer, only include human players (no AI bots)
+    const allTeamsForAuction = [userTeamForAuction];
 
     onStartAuction(allTeamsForAuction, userTeamForAuction);
   };
@@ -138,12 +127,14 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, onStartAuctio
                 <ul className="space-y-3">
                     <li className="bg-green-500/10 p-3 rounded-lg flex justify-between items-center border border-green-500/30">
                         <span className="font-bold">{username} (You)</span>
-                        <span className="text-sm text-gray-300">Host</span>
+                        <span className="text-sm text-gray-300">{isHost ? 'Host' : 'Player'}</span>
                     </li>
-                    {MOCK_PLAYERS.map(player => (
-                         <li key={player.username} className="bg-gray-700/50 p-3 rounded-lg flex justify-between items-center">
-                            <span>{player.username}</span>
-                            <span className="text-sm text-gray-400">{TEAMS.find(t => t.id === player.teamId)?.name || 'Choosing...'}</span>
+                    {roomPlayers.filter(p => p.username !== username).map(player => (
+                        <li key={player.username} className={`p-3 rounded-lg flex justify-between items-center border ${
+                          player.isHost ? 'bg-blue-500/10 border-blue-500/30' : 'bg-gray-700/50 border-gray-700'
+                        }`}>
+                            <span className="font-bold">{player.username}</span>
+                            <span className="text-sm text-gray-300">{player.isHost ? 'Host' : 'Player'}</span>
                         </li>
                     ))}
                 </ul>
@@ -153,7 +144,6 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, onStartAuctio
                 <div className="grid grid-cols-2 gap-3">
                     {allTeamOptions.map(team => {
                         const isTaken = takenTeams.includes(team.id);
-                        const playerWhoTook = MOCK_PLAYERS.find(p => p.teamId === team.id)?.username;
                         
                         return (
                             <div
@@ -165,7 +155,6 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, onStartAuctio
                             >
                                 <img src={team.logo} alt={team.name} className="w-10 h-10" />
                                 <p className="font-semibold text-sm">{team.name}</p>
-                                {isTaken && <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg text-xs text-yellow-300 font-bold">TAKEN by {playerWhoTook}</div>}
                             </div>
                         );
                     })}
@@ -231,13 +220,13 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, onStartAuctio
             </button>
             <button
               onClick={handleStart}
-              disabled={isStartDisabled}
+              disabled={isStartDisabled || !isHost}
               className="bg-yellow-500 text-gray-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-400 transition-colors duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed"
             >
               Start Auction
             </button>
         </div>
-        <p className="text-center text-xs text-gray-500 mt-4">As the host, you can start the auction when you're ready. In this simulation, other players are bots.</p>
+        <p className="text-center text-xs text-gray-500 mt-4">Waiting for other players to join... {isHost && 'As the host, you can start the auction when ready.'}</p>
       </div>
     </motion.div>
   );

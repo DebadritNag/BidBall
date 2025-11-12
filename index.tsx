@@ -9,8 +9,14 @@ if (!rootElement) {
 }
 
 const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+
+try {
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+} catch (error) {
+  console.error('Failed to render app:', error);
+  rootElement.innerHTML = '<div style="color: red; padding: 20px; font-family: sans-serif;"><h1>Error Loading App</h1><p>Please check the browser console for details.</p></div>';
+}

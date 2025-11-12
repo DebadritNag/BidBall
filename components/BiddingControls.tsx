@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { formatCurrency } from '../utils/formatters';
 
 interface BiddingControlsProps {
@@ -17,6 +17,22 @@ const BiddingControls: React.FC<BiddingControlsProps> = ({
   const isBidDisabled = !isBiddingActive || !canAfford || hasSkipped;
   const isSkipDisabled = !isBiddingActive || hasSkipped;
 
+  const handleBidClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isBidDisabled) {
+      onBid();
+    }
+  }, [isBidDisabled, onBid]);
+
+  const handleSkipClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isSkipDisabled) {
+      onSkip();
+    }
+  }, [isSkipDisabled, onSkip]);
+
   const getButtonTooltip = () => {
     if (hasSkipped) return "You have skipped this player";
     if (!canAfford) return "Not enough budget";
@@ -27,19 +43,21 @@ const BiddingControls: React.FC<BiddingControlsProps> = ({
   return (
     <div className="flex items-stretch gap-4 w-full max-w-md">
       <button
-        onClick={onBid}
+        type="button"
+        onClick={handleBidClick}
         disabled={isBidDisabled}
         title={getButtonTooltip()}
-        className="flex-grow bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-lg hover:bg-green-500 transition-all duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed transform hover:scale-105 disabled:transform-none flex flex-col items-center"
+        className="flex-grow bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-lg hover:bg-green-500 transition-all duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed transform hover:scale-105 disabled:transform-none flex flex-col items-center active:scale-95"
       >
         <span>BID</span>
         <span className="text-xs font-normal">{formatCurrency(nextBidAmount)}</span>
       </button>
       <button
-        onClick={onSkip}
+        type="button"
+        onClick={handleSkipClick}
         disabled={isSkipDisabled}
         title={hasSkipped ? "You have already skipped" : ""}
-        className="bg-red-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-red-500 transition-colors duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed transform hover:scale-105 disabled:transform-none"
+        className="bg-red-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-red-500 transition-colors duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed transform hover:scale-105 disabled:transform-none active:scale-95"
       >
         SKIP
       </button>
