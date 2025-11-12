@@ -1,0 +1,1282 @@
+[
+  {
+    "id": 1,
+    "name": "Alisson Becker",
+    "nationality": "Brazil",
+    "position": "Goalkeeper",
+    "rating": 89,
+    "basePrice": 1000000
+  },
+  {
+    "id": 2,
+    "name": "Thibaut Courtois",
+    "nationality": "Belgium",
+    "position": "Goalkeeper",
+    "rating": 90,
+    "basePrice": 1100000
+  },
+  {
+    "id": 3,
+    "name": "Ederson",
+    "nationality": "Brazil",
+    "position": "Goalkeeper",
+    "rating": 88,
+    "basePrice": 950000
+  },
+  {
+    "id": 4,
+    "name": "Marc-André ter Stegen",
+    "nationality": "Germany",
+    "position": "Goalkeeper",
+    "rating": 89,
+    "basePrice": 1000000
+  },
+  {
+    "id": 5,
+    "name": "Jan Oblak",
+    "nationality": "Slovenia",
+    "position": "Goalkeeper",
+    "rating": 88,
+    "basePrice": 900000
+  },
+  {
+    "id": 6,
+    "name": "Mike Maignan",
+    "nationality": "France",
+    "position": "Goalkeeper",
+    "rating": 87,
+    "basePrice": 850000
+  },
+  {
+    "id": 7,
+    "name": "Gianluigi Donnarumma",
+    "nationality": "Italy",
+    "position": "Goalkeeper",
+    "rating": 87,
+    "basePrice": 880000
+  },
+  {
+    "id": 8,
+    "name": "Gregor Kobel",
+    "nationality": "Switzerland",
+    "position": "Goalkeeper",
+    "rating": 86,
+    "basePrice": 750000
+  },
+  {
+    "id": 9,
+    "name": "Emiliano Martínez",
+    "nationality": "Argentina",
+    "position": "Goalkeeper",
+    "rating": 85,
+    "basePrice": 700000
+  },
+  {
+    "id": 10,
+    "name": "Diogo Costa",
+    "nationality": "Portugal",
+    "position": "Goalkeeper",
+    "rating": 85,
+    "basePrice": 720000
+  },
+  {
+    "id": 11,
+    "name": "Virgil van Dijk",
+    "nationality": "Netherlands",
+    "position": "Defender",
+    "rating": 90,
+    "basePrice": 1200000
+  },
+  {
+    "id": 12,
+    "name": "Rúben Dias",
+    "nationality": "Portugal",
+    "position": "Defender",
+    "rating": 89,
+    "basePrice": 1100000
+  },
+  {
+    "id": 13,
+    "name": "William Saliba",
+    "nationality": "France",
+    "position": "Defender",
+    "rating": 88,
+    "basePrice": 1000000
+  },
+  {
+    "id": 14,
+    "name": "Ronald Araújo",
+    "nationality": "Uruguay",
+    "position": "Defender",
+    "rating": 87,
+    "basePrice": 950000
+  },
+  {
+    "id": 15,
+    "name": "Éder Militão",
+    "nationality": "Brazil",
+    "position": "Defender",
+    "rating": 87,
+    "basePrice": 940000
+  },
+  {
+    "id": 16,
+    "name": "Marquinhos",
+    "nationality": "Brazil",
+    "position": "Defender",
+    "rating": 87,
+    "basePrice": 920000
+  },
+  {
+    "id": 17,
+    "name": "Josko Gvardiol",
+    "nationality": "Croatia",
+    "position": "Defender",
+    "rating": 86,
+    "basePrice": 880000
+  },
+  {
+    "id": 18,
+    "name": "Alessandro Bastoni",
+    "nationality": "Italy",
+    "position": "Defender",
+    "rating": 86,
+    "basePrice": 870000
+  },
+  {
+    "id": 19,
+    "name": "Theo Hernández",
+    "nationality": "France",
+    "position": "Defender",
+    "rating": 86,
+    "basePrice": 900000
+  },
+  {
+    "id": 20,
+    "name": "Achraf Hakimi",
+    "nationality": "Morocco",
+    "position": "Defender",
+    "rating": 86,
+    "basePrice": 910000
+  },
+  {
+    "id": 21,
+    "name": "Alphonso Davies",
+    "nationality": "Canada",
+    "position": "Defender",
+    "rating": 85,
+    "basePrice": 850000
+  },
+  {
+    "id": 22,
+    "name": "Trent Alexander-Arnold",
+    "nationality": "England",
+    "position": "Defender",
+    "rating": 86,
+    "basePrice": 900000
+  },
+  {
+    "id": 23,
+    "name": "Kyle Walker",
+    "nationality": "England",
+    "position": "Defender",
+    "rating": 85,
+    "basePrice": 800000
+  },
+  {
+    "id": 24,
+    "name": "Andrew Robertson",
+    "nationality": "Scotland",
+    "position": "Defender",
+    "rating": 85,
+    "basePrice": 810000
+  },
+  {
+    "id": 25,
+    "name": "John Stones",
+    "nationality": "England",
+    "position": "Defender",
+    "rating": 85,
+    "basePrice": 820000
+  },
+  {
+    "id": 26,
+    "name": "Antonio Rüdiger",
+    "nationality": "Germany",
+    "position": "Defender",
+    "rating": 86,
+    "basePrice": 890000
+  },
+  {
+    "id": 27,
+    "name": "Jules Koundé",
+    "nationality": "France",
+    "position": "Defender",
+    "rating": 85,
+    "basePrice": 830000
+  },
+  {
+    "id": 28,
+    "name": "Nuno Mendes",
+    "nationality": "Portugal",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 750000
+  },
+  {
+    "id": 29,
+    "name": "Gabriel Magalhães",
+    "nationality": "Brazil",
+    "position": "Defender",
+    "rating": 85,
+    "basePrice": 840000
+  },
+  {
+    "id": 30,
+    "name": "Ben White",
+    "nationality": "England",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 760000
+  },
+  {
+    "id": 31,
+    "name": "Kim Min-jae",
+    "nationality": "South Korea",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 780000
+  },
+  {
+    "id": 32,
+    "name": "Lisandro Martínez",
+    "nationality": "Argentina",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 770000
+  },
+  {
+    "id": 33,
+    "name": "Dayot Upamecano",
+    "nationality": "France",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 790000
+  },
+  {
+    "id": 34,
+    "name": "Matthijs de Ligt",
+    "nationality": "Netherlands",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 800000
+  },
+  {
+    "id": 35,
+    "name": "Reece James",
+    "nationality": "England",
+    "position": "Defender",
+    "rating": 83,
+    "basePrice": 700000
+  },
+  {
+    "id": 36,
+    "name": "Jeremie Frimpong",
+    "nationality": "Netherlands",
+    "position": "Defender",
+    "rating": 85,
+    "basePrice": 820000
+  },
+  {
+    "id": 37,
+    "name": "Bremer",
+    "nationality": "Brazil",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 780000
+  },
+  {
+    "id": 38,
+    "name": "David Alaba",
+    "nationality": "Austria",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 760000
+  },
+  {
+    "id": 39,
+    "name": "Ibrahima Konaté",
+    "nationality": "France",
+    "position": "Defender",
+    "rating": 83,
+    "basePrice": 710000
+  },
+  {
+    "id": 40,
+    "name": "Federico Dimarco",
+    "nationality": "Italy",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 750000
+  },
+  {
+    "id": 41,
+    "name": "Alejandro Grimaldo",
+    "nationality": "Spain",
+    "position": "Defender",
+    "rating": 86,
+    "basePrice": 860000
+  },
+  {
+    "id": 42,
+    "name": "Manuel Akanji",
+    "nationality": "Switzerland",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 770000
+  },
+  {
+    "id": 43,
+    "name": "Pau Torres",
+    "nationality": "Spain",
+    "position": "Defender",
+    "rating": 83,
+    "basePrice": 700000
+  },
+  {
+    "id": 44,
+    "name": "Lucas Hernández",
+    "nationality": "France",
+    "position": "Defender",
+    "rating": 83,
+    "basePrice": 710000
+  },
+  {
+    "id": 45,
+    "name": "Nico Schlotterbeck",
+    "nationality": "Germany",
+    "position": "Defender",
+    "rating": 83,
+    "basePrice": 720000
+  },
+  {
+    "id": 46,
+    "name": "Giovanni Di Lorenzo",
+    "nationality": "Italy",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 750000
+  },
+  {
+    "id": 47,
+    "name": "Cristian Romero",
+    "nationality": "Argentina",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 780000
+  },
+  {
+    "id": 48,
+    "name": "Micky van de Ven",
+    "nationality": "Netherlands",
+    "position": "Defender",
+    "rating": 82,
+    "basePrice": 680000
+  },
+  {
+    "id": 49,
+    "name": "Ezri Konsa",
+    "nationality": "England",
+    "position": "Defender",
+    "rating": 82,
+    "basePrice": 670000
+  },
+  {
+    "id": 50,
+    "name": "Castello Lukeba",
+    "nationality": "France",
+    "position": "Defender",
+    "rating": 82,
+    "basePrice": 690000
+  },
+  {
+    "id": 51,
+    "name": "Leny Yoro",
+    "nationality": "France",
+    "position": "Defender",
+    "rating": 81,
+    "basePrice": 650000
+  },
+  {
+    "id": 52,
+    "name": "Jean-Clair Todibo",
+    "nationality": "France",
+    "position": "Defender",
+    "rating": 82,
+    "basePrice": 680000
+  },
+  {
+    "id": 53,
+    "name": "Destiny Udogie",
+    "nationality": "Italy",
+    "position": "Defender",
+    "rating": 82,
+    "basePrice": 700000
+  },
+  {
+    "id": 54,
+    "name": "Pedro Porro",
+    "nationality": "Spain",
+    "position": "Defender",
+    "rating": 82,
+    "basePrice": 690000
+  },
+  {
+    "id": 55,
+    "name": "Kieran Trippier",
+    "nationality": "England",
+    "position": "Defender",
+    "rating": 83,
+    "basePrice": 700000
+  },
+  {
+    "id": 56,
+    "name": "Oleksandr Zinchenko",
+    "nationality": "Ukraine",
+    "position": "Defender",
+    "rating": 82,
+    "basePrice": 670000
+  },
+  {
+    "id": 57,
+    "name": "Joško Gvardiol",
+    "nationality": "Croatia",
+    "position": "Defender",
+    "rating": 86,
+    "basePrice": 880000
+  },
+  {
+    "id": 58,
+    "name": "Fikayo Tomori",
+    "nationality": "England",
+    "position": "Defender",
+    "rating": 84,
+    "basePrice": 760000
+  },
+  {
+    "id": 59,
+    "name": "Rico Lewis",
+    "nationality": "England",
+    "position": "Defender",
+    "rating": 80,
+    "basePrice": 600000
+  },
+  {
+    "id": 60,
+    "name": "Levi Colwill",
+    "nationality": "England",
+    "position": "Defender",
+    "rating": 81,
+    "basePrice": 630000
+  },
+  {
+    "id": 61,
+    "name": "Rodri",
+    "nationality": "Spain",
+    "position": "Midfielder",
+    "rating": 91,
+    "basePrice": 1600000
+  },
+  {
+    "id": 62,
+    "name": "Kevin De Bruyne",
+    "nationality": "Belgium",
+    "position": "Midfielder",
+    "rating": 90,
+    "basePrice": 1400000
+  },
+  {
+    "id": 63,
+    "name": "Jude Bellingham",
+    "nationality": "England",
+    "position": "Midfielder",
+    "rating": 90,
+    "basePrice": 1800000
+  },
+  {
+    "id": 64,
+    "name": "Jamal Musiala",
+    "nationality": "Germany",
+    "position": "Midfielder",
+    "rating": 88,
+    "basePrice": 1500000
+  },
+  {
+    "id": 65,
+    "name": "Florian Wirtz",
+    "nationality": "Germany",
+    "position": "Midfielder",
+    "rating": 88,
+    "basePrice": 1450000
+  },
+  {
+    "id": 66,
+    "name": "Martin Ødegaard",
+    "nationality": "Norway",
+    "position": "Midfielder",
+    "rating": 88,
+    "basePrice": 1400000
+  },
+  {
+    "id": 67,
+    "name": "Federico Valverde",
+    "nationality": "Uruguay",
+    "position": "Midfielder",
+    "rating": 88,
+    "basePrice": 1350000
+  },
+  {
+    "id": 68,
+    "name": "Declan Rice",
+    "nationality": "England",
+    "position": "Midfielder",
+    "rating": 87,
+    "basePrice": 1200000
+  },
+  {
+    "id": 69,
+    "name": "Bernardo Silva",
+    "nationality": "Portugal",
+    "position": "Midfielder",
+    "rating": 88,
+    "basePrice": 1300000
+  },
+  {
+    "id": 70,
+    "name": "Pedri",
+    "nationality": "Spain",
+    "position": "Midfielder",
+    "rating": 87,
+    "basePrice": 1250000
+  },
+  {
+    "id": 71,
+    "name": "Gavi",
+    "nationality": "Spain",
+    "position": "Midfielder",
+    "rating": 85,
+    "basePrice": 1100000
+  },
+  {
+    "id": 72,
+    "name": "Bruno Fernandes",
+    "nationality": "Portugal",
+    "position": "Midfielder",
+    "rating": 87,
+    "basePrice": 1200000
+  },
+  {
+    "id": 73,
+    "name": "Frenkie de Jong",
+    "nationality": "Netherlands",
+    "position": "Midfielder",
+    "rating": 86,
+    "basePrice": 1150000
+  },
+  {
+    "id": 74,
+    "name": "Joshua Kimmich",
+    "nationality": "Germany",
+    "position": "Midfielder",
+    "rating": 87,
+    "basePrice": 1100000
+  },
+  {
+    "id": 75,
+    "name": "Nicolò Barella",
+    "nationality": "Italy",
+    "position": "Midfielder",
+    "rating": 86,
+    "basePrice": 1000000
+  },
+  {
+    "id": 76,
+    "name": "Eduardo Camavinga",
+    "nationality": "France",
+    "position": "Midfielder",
+    "rating": 85,
+    "basePrice": 1050000
+  },
+  {
+    "id": 77,
+    "name": "Aurélien Tchouaméni",
+    "nationality": "France",
+    "position": "Midfielder",
+    "rating": 86,
+    "basePrice": 1100000
+  },
+  {
+    "id": 78,
+    "name": "Ilkay Gündogan",
+    "nationality": "Germany",
+    "position": "Midfielder",
+    "rating": 86,
+    "basePrice": 900000
+  },
+  {
+    "id": 79,
+    "name": "Hakan Çalhanoglu",
+    "nationality": "Turkey",
+    "position": "Midfielder",
+    "rating": 86,
+    "basePrice": 950000
+  },
+  {
+    "id": 80,
+    "name": "Alexis Mac Allister",
+    "nationality": "Argentina",
+    "position": "Midfielder",
+    "rating": 85,
+    "basePrice": 900000
+  },
+  {
+    "id": 81,
+    "name": "Dominik Szoboszlai",
+    "nationality": "Hungary",
+    "position": "Midfielder",
+    "rating": 84,
+    "basePrice": 850000
+  },
+  {
+    "id": 82,
+    "name": "Xavi Simons",
+    "nationality": "Netherlands",
+    "position": "Midfielder",
+    "rating": 84,
+    "basePrice": 900000
+  },
+  {
+    "id": 83,
+    "name": "Enzo Fernández",
+    "nationality": "Argentina",
+    "position": "Midfielder",
+    "rating": 83,
+    "basePrice": 800000
+  },
+  {
+    "id": 84,
+    "name": "Vitinha",
+    "nationality": "Portugal",
+    "position": "Midfielder",
+    "rating": 84,
+    "basePrice": 820000
+  },
+  {
+    "id": 85,
+    "name": "Bruno Guimarães",
+    "nationality": "Brazil",
+    "position": "Midfielder",
+    "rating": 85,
+    "basePrice": 950000
+  },
+  {
+    "id": 86,
+    "name": "James Maddison",
+    "nationality": "England",
+    "position": "Midfielder",
+    "rating": 84,
+    "basePrice": 830000
+  },
+  {
+    "id": 87,
+    "name": "Lucas Paquetá",
+    "nationality": "Brazil",
+    "position": "Midfielder",
+    "rating": 84,
+    "basePrice": 810000
+  },
+  {
+    "id": 88,
+    "name": "Teun Koopmeiners",
+    "nationality": "Netherlands",
+    "position": "Midfielder",
+    "rating": 84,
+    "basePrice": 800000
+  },
+  {
+    "id": 89,
+    "name": "Granit Xhaka",
+    "nationality": "Switzerland",
+    "position": "Midfielder",
+    "rating": 85,
+    "basePrice": 850000
+  },
+  {
+    "id": 90,
+    "name": "Kobbie Mainoo",
+    "nationality": "England",
+    "position": "Midfielder",
+    "rating": 81,
+    "basePrice": 750000
+  },
+  {
+    "id": 91,
+    "name": "Warren Zaïre-Emery",
+    "nationality": "France",
+    "position": "Midfielder",
+    "rating": 83,
+    "basePrice": 880000
+  },
+  {
+    "id": 92,
+    "name": "Leon Goretzka",
+    "nationality": "Germany",
+    "position": "Midfielder",
+    "rating": 84,
+    "basePrice": 800000
+  },
+  {
+    "id": 93,
+    "name": "Rúben Neves",
+    "nationality": "Portugal",
+    "position": "Midfielder",
+    "rating": 84,
+    "basePrice": 790000
+  },
+  {
+    "id": 94,
+    "name": "Moisés Caicedo",
+    "nationality": "Ecuador",
+    "position": "Midfielder",
+    "rating": 82,
+    "basePrice": 760000
+  },
+  {
+    "id": 95,
+    "name": "Manuel Ugarte",
+    "nationality": "Uruguay",
+    "position": "Midfielder",
+    "rating": 83,
+    "basePrice": 780000
+  },
+  {
+    "id": 96,
+    "name": "Douglas Luiz",
+    "nationality": "Brazil",
+    "position": "Midfielder",
+    "rating": 83,
+    "basePrice": 770000
+  },
+  {
+    "id": 97,
+    "name": "Adrien Rabiot",
+    "nationality": "France",
+    "position": "Midfielder",
+    "rating": 84,
+    "basePrice": 800000
+  },
+  {
+    "id": 98,
+    "name": "Marcelo Brozovic",
+    "nationality": "Croatia",
+    "position": "Midfielder",
+    "rating": 83,
+    "basePrice": 750000
+  },
+  {
+    "id": 99,
+    "name": "Rodrigo De Paul",
+    "nationality": "Argentina",
+    "position": "Midfielder",
+    "rating": 84,
+    "basePrice": 790000
+  },
+  {
+    "id": 100,
+    "name": "Pape Matar Sarr",
+    "nationality": "Senegal",
+    "position": "Midfielder",
+    "rating": 81,
+    "basePrice": 700000
+  },
+  {
+    "id": 101,
+    "name": "Yves Bissouma",
+    "nationality": "Mali",
+    "position": "Midfielder",
+    "rating": 82,
+    "basePrice": 720000
+  },
+  {
+    "id": 102,
+    "name": "Conor Gallagher",
+    "nationality": "England",
+    "position": "Midfielder",
+    "rating": 82,
+    "basePrice": 730000
+  },
+  {
+    "id": 103,
+    "name": "João Palhinha",
+    "nationality": "Portugal",
+    "position": "Midfielder",
+    "rating": 83,
+    "basePrice": 740000
+  },
+  {
+    "id": 104,
+    "name": "Orkun Kökçü",
+    "nationality": "Turkey",
+    "position": "Midfielder",
+    "rating": 82,
+    "basePrice": 710000
+  },
+  {
+    "id": 105,
+    "name": "Exequiel Palacios",
+    "nationality": "Argentina",
+    "position": "Midfielder",
+    "rating": 83,
+    "basePrice": 780000
+  },
+  {
+    "id": 106,
+    "name": "Joey Veerman",
+    "nationality": "Netherlands",
+    "position": "Midfielder",
+    "rating": 82,
+    "basePrice": 700000
+  },
+  {
+    "id": 107,
+    "name": "Nicolò Fagioli",
+    "nationality": "Italy",
+    "position": "Midfielder",
+    "rating": 81,
+    "basePrice": 690000
+  },
+  {
+    "id": 108,
+    "name": "Manuel Locatelli",
+    "nationality": "Italy",
+    "position": "Midfielder",
+    "rating": 82,
+    "basePrice": 720000
+  },
+  {
+    "id": 109,
+    "name": "Scott McTominay",
+    "nationality": "Scotland",
+    "position": "Midfielder",
+    "rating": 82,
+    "basePrice": 710000
+  },
+  {
+    "id": 110,
+    "name": "Aleksandar Pavlovic",
+    "nationality": "Germany",
+    "position": "Midfielder",
+    "rating": 80,
+    "basePrice": 680000
+  },
+  {
+    "id": 111,
+    "name": "Kylian Mbappé",
+    "nationality": "France",
+    "position": "Forward",
+    "rating": 92,
+    "basePrice": 2200000
+  },
+  {
+    "id": 112,
+    "name": "Erling Haaland",
+    "nationality": "Norway",
+    "position": "Forward",
+    "rating": 92,
+    "basePrice": 2100000
+  },
+  {
+    "id": 113,
+    "name": "Vinícius Jr.",
+    "nationality": "Brazil",
+    "position": "Forward",
+    "rating": 91,
+    "basePrice": 1900000
+  },
+  {
+    "id": 114,
+    "name": "Lionel Messi",
+    "nationality": "Argentina",
+    "position": "Forward",
+    "rating": 89,
+    "basePrice": 1000000
+  },
+  {
+    "id": 115,
+    "name": "Harry Kane",
+    "nationality": "England",
+    "position": "Forward",
+    "rating": 90,
+    "basePrice": 1500000
+  },
+  {
+    "id": 116,
+    "name": "Mohamed Salah",
+    "nationality": "Egypt",
+    "position": "Forward",
+    "rating": 89,
+    "basePrice": 1300000
+  },
+  {
+    "id": 117,
+    "name": "Bukayo Saka",
+    "nationality": "England",
+    "position": "Forward",
+    "rating": 89,
+    "basePrice": 1600000
+  },
+  {
+    "id": 118,
+    "name": "Phil Foden",
+    "nationality": "England",
+    "position": "Forward",
+    "rating": 88,
+    "basePrice": 1550000
+  },
+  {
+    "id": 119,
+    "name": "Lautaro Martínez",
+    "nationality": "Argentina",
+    "position": "Forward",
+    "rating": 88,
+    "basePrice": 1400000
+  },
+  {
+    "id": 120,
+    "name": "Victor Osimhen",
+    "nationality": "Nigeria",
+    "position": "Forward",
+    "rating": 88,
+    "basePrice": 1350000
+  },
+  {
+    "id": 121,
+    "name": "Robert Lewandowski",
+    "nationality": "Poland",
+    "position": "Forward",
+    "rating": 88,
+    "basePrice": 1200000
+  },
+  {
+    "id": 122,
+    "name": "Antoine Griezmann",
+    "nationality": "France",
+    "position": "Forward",
+    "rating": 87,
+    "basePrice": 1100000
+  },
+  {
+    "id": 123,
+    "name": "Heung-min Son",
+    "nationality": "South Korea",
+    "position": "Forward",
+    "rating": 87,
+    "basePrice": 1150000
+  },
+  {
+    "id": 124,
+    "name": "Khvicha Kvaratskhelia",
+    "nationality": "Georgia",
+    "position": "Forward",
+    "rating": 87,
+    "basePrice": 1250000
+  },
+  {
+    "id": 125,
+    "name": "Rodrygo",
+    "nationality": "Brazil",
+    "position": "Forward",
+    "rating": 87,
+    "basePrice": 1300000
+  },
+  {
+    "id": 126,
+    "name": "Cole Palmer",
+    "nationality": "England",
+    "position": "Forward",
+    "rating": 86,
+    "basePrice": 1100000
+  },
+  {
+    "id": 127,
+    "name": "Lamine Yamal",
+    "nationality": "Spain",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 1000000
+  },
+  {
+    "id": 128,
+    "name": "Rafael Leão",
+    "nationality": "Portugal",
+    "position": "Forward",
+    "rating": 86,
+    "basePrice": 1200000
+  },
+  {
+    "id": 129,
+    "name": "Ousmane Dembélé",
+    "nationality": "France",
+    "position": "Forward",
+    "rating": 85,
+    "basePrice": 900000
+  },
+  {
+    "id": 130,
+    "name": "Gabriel Martinelli",
+    "nationality": "Brazil",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 850000
+  },
+  {
+    "id": 131,
+    "name": "Luis Díaz",
+    "nationality": "Colombia",
+    "position": "Forward",
+    "rating": 85,
+    "basePrice": 920000
+  },
+  {
+    "id": 132,
+    "name": "Cody Gakpo",
+    "nationality": "Netherlands",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 830000
+  },
+  {
+    "id": 133,
+    "name": "Darwin Núñez",
+    "nationality": "Uruguay",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 860000
+  },
+  {
+    "id": 134,
+    "name": "Diogo Jota",
+    "nationality": "Portugal",
+    "position": "Forward",
+    "rating": 85,
+    "basePrice": 900000
+  },
+  {
+    "id": 135,
+    "name": "Gabriel Jesus",
+    "nationality": "Brazil",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 840000
+  },
+  {
+    "id": 136,
+    "name": "Marcus Rashford",
+    "nationality": "England",
+    "position": "Forward",
+    "rating": 83,
+    "basePrice": 800000
+  },
+  {
+    "id": 137,
+    "name": "Jack Grealish",
+    "nationality": "England",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 820000
+  },
+  {
+    "id": 138,
+    "name": "Kingsley Coman",
+    "nationality": "France",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 830000
+  },
+  {
+    "id": 139,
+    "name": "Leroy Sané",
+    "nationality": "Germany",
+    "position": "Forward",
+    "rating": 85,
+    "basePrice": 880000
+  },
+  {
+    "id": 140,
+    "name": "Serge Gnabry",
+    "nationality": "Germany",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 810000
+  },
+  {
+    "id": 141,
+    "name": "Randal Kolo Muani",
+    "nationality": "France",
+    "position": "Forward",
+    "rating": 83,
+    "basePrice": 780000
+  },
+  {
+    "id": 142,
+    "name": "Alexander Isak",
+    "nationality": "Sweden",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 870000
+  },
+  {
+    "id": 143,
+    "name": "Julián Álvarez",
+    "nationality": "Argentina",
+    "position": "Forward",
+    "rating": 85,
+    "basePrice": 950000
+  },
+  {
+    "id": 144,
+    "name": "Ollie Watkins",
+    "nationality": "England",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 830000
+  },
+  {
+    "id": 145,
+    "name": "Dusan Vlahovic",
+    "nationality": "Serbia",
+    "position": "Forward",
+    "rating": 85,
+    "basePrice": 910000
+  },
+  {
+    "id": 146,
+    "name": "Raphinha",
+    "nationality": "Brazil",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 800000
+  },
+  {
+    "id": 147,
+    "name": "Nico Williams",
+    "nationality": "Spain",
+    "position": "Forward",
+    "rating": 83,
+    "basePrice": 820000
+  },
+  {
+    "id": 148,
+    "name": "Ferran Torres",
+    "nationality": "Spain",
+    "position": "Forward",
+    "rating": 82,
+    "basePrice": 750000
+  },
+  {
+    "id": 149,
+    "name": "Federico Chiesa",
+    "nationality": "Italy",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 830000
+  },
+  {
+    "id": 150,
+    "name": "Victor Boniface",
+    "nationality": "Nigeria",
+    "position": "Forward",
+    "rating": 83,
+    "basePrice": 800000
+  },
+  {
+    "id": 151,
+    "name": "Loïs Openda",
+    "nationality": "Belgium",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 850000
+  },
+  {
+    "id": 152,
+    "name": "Rasmus Højlund",
+    "nationality": "Denmark",
+    "position": "Forward",
+    "rating": 81,
+    "basePrice": 760000
+  },
+  {
+    "id": 153,
+    "name": "Alejandro Garnacho",
+    "nationality": "Argentina",
+    "position": "Forward",
+    "rating": 81,
+    "basePrice": 780000
+  },
+  {
+    "id": 154,
+    "name": "Michael Olise",
+    "nationality": "France",
+    "position": "Forward",
+    "rating": 83,
+    "basePrice": 810000
+  },
+  {
+    "id": 155,
+    "name": "Marcus Thuram",
+    "nationality": "France",
+    "position": "Forward",
+    "rating": 84,
+    "basePrice": 820000
+  },
+  {
+    "id": 156,
+    "name": "Anthony Gordon",
+    "nationality": "England",
+    "position": "Forward",
+    "rating": 82,
+    "basePrice": 770000
+  },
+  {
+    "id": 157,
+    "name": "João Félix",
+    "nationality": "Portugal",
+    "position": "Forward",
+    "rating": 82,
+    "basePrice": 760000
+  },
+  {
+    "id": 158,
+    "name": "Evan Ferguson",
+    "nationality": "Ireland",
+    "position": "Forward",
+    "rating": 80,
+    "basePrice": 700000
+  },
+  {
+    "id": 159,
+    "name": "Jérémy Doku",
+    "nationality": "Belgium",
+    "position": "Forward",
+    "rating": 82,
+    "basePrice": 790000
+  },
+  {
+    "id": 160,
+    "name": "Mykhailo Mudryk",
+    "nationality": "Ukraine",
+    "position": "Forward",
+    "rating": 80,
+    "basePrice": 720000
+  }
+]
