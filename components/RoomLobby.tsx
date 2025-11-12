@@ -39,6 +39,7 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [customTeamName, setCustomTeamName] = useState('');
   const [roomPlayers, setRoomPlayers] = useState<Array<{username: string, isHost: boolean, teamId?: string, teamName?: string}>>([]);
+  const [teamLocked, setTeamLocked] = useState(false); // Track if user locked their team choice
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -214,11 +215,64 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
     setChatInput('');
   };
 
-  const handleStart = async () => {
+  // Save team selection when user confirms
+  const handleLockTeam = async () => {
     if (!selectedTeamId) {
       setMessages(prev => [...prev, { sender: 'System', text: 'Please select a team first', isUser: false }]);
       return;
     }
+
+    if (selectedTeamId === CUSTOM_TEAM_ID && customTeamName.trim().length < 3) {
+      setMessages(prev => [...prev, { sender: 'System', text: 'Custom team name must be at least 3 characters', isUser: false }]);
+      return;
+    }
+
+    let teamId: string;
+    let teamName: string;
+
+    if (selectedTeamId === CUSTOM_TEAM_ID) {
+      teamId = `custom-${username.toLowerCase()}`;
+      teamName = customTeamName.trim();
+    } else {
+      const selectedTeam = TEAMS.find(t => t.id === selectedTeamId);
+      if (!selectedTeam) return;
+      teamId = selectedTeam.id;
+      teamName = selectedTeam.name;
+    }
+
+    try {
+      const updatedPlayers = roomPlayers.map(player => 
+        player.username === username 
+          ? { ...player, teamId, teamName }
+          : player
+      );
+      
+      console.log('[Team Lock] Saving team selection:', { username, teamId, teamName });
+      const { error } = await supabase
+        .from('rooms')
+        .update({ players: updatedPlayers, updated_at: new Date().toISOString() })
+        .eq('code', roomCode);
+      
+      if (error) throw error;
+      
+      setTeamLocked(true);
+      setMessages(prev => [...prev, { 
+        sender: 'System', 
+        text: `Team "${teamName}" locked! Waiting for host to start...`, 
+        isUser: false 
+      }]);
+      console.log('[Team Lock] Team locked successfully');
+    } catch (err) {
+      console.error('Error locking team selection:', err);
+      setMessages(prev => [...prev, { 
+        sender: 'System', 
+        text: 'Error saving team. Please try again.', 
+        isUser: false 
+      }]);
+    }
+  };
+
+  const handleStart = async () => {
     let userTeamDetails: Omit<Team, 'budget' | 'players' | 'isAI' | 'isUser'>;
 
     if (selectedTeamId === CUSTOM_TEAM_ID) {
@@ -431,14 +485,30 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
              <button onClick={onBack} className="text-gray-400 hover:text-yellow-400 transition-colors">
                 &larr; Leave Room
             </button>
-            <button
-              onClick={handleStart}
-              disabled={isStartDisabled || !isHost}
-              className="bg-yellow-500 text-gray-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-400 transition-colors duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed"
-              title={!isHost ? "Only the host can start the auction" : ""}
-            >
-              Start Auction
-            </button>
+            <div className="flex gap-4">
+              {!isHost && !teamLocked && (
+                <button
+                  onClick={handleLockTeam}
+                  disabled={isStartDisabled}
+                  className="bg-blue-500 text-white font-bold py-3 px-8 rounded-lg text-xl hover:bg-blue-400 transition-colors duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                >
+                  Lock Team
+                </button>
+              )}
+              {!isHost && teamLocked && (
+                <div className="bg-green-500/20 border-2 border-green-500 text-green-400 font-bold py-3 px-8 rounded-lg text-xl">
+                  ✓ Team Locked
+                </div>
+              )}
+              <button
+                onClick={handleStart}
+                disabled={isStartDisabled || !isHost}
+                className="bg-yellow-500 text-gray-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-400 transition-colors duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                title={!isHost ? "Only the host can start the auction" : ""}
+              >
+                Start Auction
+              </button>
+            </div>
         </div>
         <p className="text-center text-xs text-gray-500 mt-4">Waiting for other players to join... {isHost && 'As the host, you can start the auction when ready.'}</p>
       </div>

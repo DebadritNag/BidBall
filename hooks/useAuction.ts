@@ -290,12 +290,12 @@ const useAuction = (
         
         // Save to Supabase (fire and forget)
         if (winningTeam && player.id) {
-          teamService.addPlayerToTeam(winningTeam.id, player.id, currentBid).catch((error) => {
-            console.error('Error saving player to team:', error);
-          });
-          bidService.placeBid('current-auction', winningTeam.id, currentBid).catch((error) => {
-            console.error('Error placing bid:', error);
-          });
+          // For multiplayer, bids are synced via auction_state, so skip individual bid logging
+          if (!roomCode) {
+            teamService.addPlayerToTeam(winningTeam.id, player.id, currentBid).catch((error) => {
+              console.error('Error saving player to team:', error);
+            });
+          }
         }
         
         setTeams(prevTeams => prevTeams.map(team => {
