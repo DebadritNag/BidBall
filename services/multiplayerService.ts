@@ -12,7 +12,7 @@ interface Room {
   code: string;
   host_username: string;
   players: RoomPlayer[];
-  status: 'waiting' | 'auction_started' | 'finished';
+  status: 'waiting' | 'auction_started' | 'bidding_ready' | 'finished';
   auction_teams?: any[];
   created_at: string;
   updated_at: string;
