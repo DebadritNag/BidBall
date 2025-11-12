@@ -168,44 +168,48 @@ const useAuction = (
   const nextPlayer = useCallback(() => {
     if (aiActionTimeoutRef.current) clearTimeout(aiActionTimeoutRef.current);
 
-    if (!unsoldPlayers || unsoldPlayers.length === 0) {
-      // No more players, end auction
-      setStatus('finished');
-      onAuctionEnd(teams);
-      return;
-    }
+    // Use a functional update to get the latest unsoldPlayers state
+    setUnsoldPlayers(prevUnsoldPlayers => {
+      if (!prevUnsoldPlayers || prevUnsoldPlayers.length === 0) {
+        // No more players, end auction
+        setStatus('finished');
+        onAuctionEnd(teams);
+        return prevUnsoldPlayers;
+      }
 
-    // Check if current index is out of bounds (happens when we remove unsold player)
-    let nextIndex = currentPlayerIndex;
-    if (currentPlayerIndex >= unsoldPlayers.length) {
-      nextIndex = unsoldPlayers.length - 1;
-    }
+      // Calculate next index based on current length
+      let nextIndex = currentPlayerIndex;
+      if (currentPlayerIndex >= prevUnsoldPlayers.length) {
+        nextIndex = prevUnsoldPlayers.length - 1;
+      }
 
-    if (nextIndex >= unsoldPlayers.length - 1) {
-      // Auction round complete, check if re-auction is needed
-      initializeReAuction();
-      return;
-    }
-    
-    nextIndex = nextIndex + 1;
-    setCurrentPlayerIndex(nextIndex);
-    const player = unsoldPlayers[nextIndex];
+      if (nextIndex >= prevUnsoldPlayers.length - 1) {
+        // Auction round complete, check if re-auction is needed
+        setTimeout(() => initializeReAuction(), POST_SALE_DELAY);
+        return prevUnsoldPlayers;
+      }
+      
+      nextIndex = nextIndex + 1;
+      setCurrentPlayerIndex(nextIndex);
+      const player = prevUnsoldPlayers[nextIndex];
 
-    if (!player) {
-      // Player not found, end auction
-      setStatus('finished');
-      onAuctionEnd(teams);
-      return;
-    }
+      if (!player) {
+        // Player not found, end auction
+        setStatus('finished');
+        onAuctionEnd(teams);
+        return prevUnsoldPlayers;
+      }
 
-    setStatus('bidding');
-    setCurrentBid(player.basePrice);
-    setHighestBidder(null);
-    setSkippedTeams(new Set());
-    resetTimer();
-    updateAuctioneerMessage({ eventType: 'NEW_PLAYER', playerName: player.name, basePrice: player.basePrice });
-    // MULTIPLAYER: Host would emit a 'next-player' event to the server here.
-  }, [currentPlayerIndex, unsoldPlayers, resetTimer, updateAuctioneerMessage, initializeReAuction, teams, onAuctionEnd]);
+      setStatus('bidding');
+      setCurrentBid(player.basePrice);
+      setHighestBidder(null);
+      setSkippedTeams(new Set());
+      resetTimer();
+      updateAuctioneerMessage({ eventType: 'NEW_PLAYER', playerName: player.name, basePrice: player.basePrice });
+      
+      return prevUnsoldPlayers;
+    });
+  }, [currentPlayerIndex, resetTimer, updateAuctioneerMessage, initializeReAuction, teams, onAuctionEnd]);
 
   const handleSale = useCallback(() => {
     stopTimer();
@@ -246,6 +250,7 @@ const useAuction = (
         setStatus('unsold');
         updateAuctioneerMessage({ eventType: 'PLAYER_UNSOLD', playerName: player.name });
         // Remove unsold player from the unsold list for re-auction consideration
+        // Don't decrement index here - nextPlayer will handle it
         setUnsoldPlayers(prev => prev.filter((_, index) => index !== currentPlayerIndex));
     }
 

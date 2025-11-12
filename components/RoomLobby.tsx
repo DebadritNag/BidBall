@@ -76,7 +76,7 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
         const errorMsg = error instanceof Error ? error.message : String(error);
         
         let helpText = `Error: ${errorMsg}`;
-        if (errorMsg.includes('relations')) {
+        if (errorMsg.includes('relations') || errorMsg.includes('permission')) {
           helpText = '⚠️ Database Setup Required: Please run the SQL migration in Supabase. Go to SQL Editor in Supabase Dashboard and copy-paste all SQL from: database/migrations/001_create_multiplayer_tables.sql';
         }
         

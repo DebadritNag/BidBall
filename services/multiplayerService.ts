@@ -30,7 +30,8 @@ export const multiplayerService = {
         return null;
       }
       
-      const { data, error } = await supabase
+      // First, try to insert the room
+      const { data: insertData, error: insertError } = await supabase
         .from('rooms')
         .insert([
           {
@@ -43,31 +44,36 @@ export const multiplayerService = {
         .select()
         .single();
 
-      if (error) {
-        console.error('Supabase error creating room:', error);
-        if (error.message && error.message.includes('relation "public.rooms" does not exist')) {
-          console.error('Database tables not created. Please run the migration SQL first.');
-        }
-        throw error;
-      }
-      console.log('createRoom response:', data);
-      if (data) {
-        // Ensure players is properly formatted
-        console.log('createRoom response players type:', typeof data.players, 'value:', data.players);
-        if (data.players && typeof data.players === 'string') {
+      if (insertError) {
+        console.error('Supabase error creating room:', insertError);
+        console.error('Error details:', insertError.code, insertError.message, insertError.details);
+        // Don't throw, try to fetch the room instead (it might have been created)
+      } else if (insertData) {
+        console.log('createRoom insert success:', insertData);
+        // Format and return
+        if (insertData.players && typeof insertData.players === 'string') {
           try {
-            data.players = JSON.parse(data.players);
+            insertData.players = JSON.parse(insertData.players);
           } catch (e) {
             console.error('Failed to parse players:', e);
-            data.players = [];
+            insertData.players = [];
           }
-        } else if (!Array.isArray(data.players)) {
-          console.log('createRoom players not array, resetting');
-          data.players = [];
+        } else if (!Array.isArray(insertData.players)) {
+          insertData.players = [];
         }
-        console.log('createRoom final players:', data.players);
+        return insertData as Room;
       }
-      return data as Room;
+      
+      // Fallback: fetch the room to confirm it was created
+      console.log('Fetching created room as fallback...');
+      const room = await multiplayerService.getRoomByCode(roomCode);
+      if (room) {
+        console.log('Room found after creation:', room);
+        return room;
+      }
+      
+      console.error('Failed to create or retrieve room');
+      return null;
     } catch (error) {
       console.error('Error creating room:', error);
       return null;
@@ -86,6 +92,7 @@ export const multiplayerService = {
 
       if (error) {
         console.error('Supabase error fetching room:', error);
+        console.error('Error details:', error.code, error.message, error.details);
         if (error.code === 'PGRST116') {
           console.error('Room not found in database');
         }
@@ -155,6 +162,7 @@ export const multiplayerService = {
 
       if (error) {
         console.error('Supabase error adding player:', error);
+        console.error('Error details:', error.code, error.message, error.details);
         throw error;
       }
       if (data) {
