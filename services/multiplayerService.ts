@@ -36,6 +36,20 @@ export const multiplayerService = {
         .single();
 
       if (error) throw error;
+      console.log('createRoom response:', data);
+      if (data) {
+        // Ensure players is properly formatted
+        if (data.players && typeof data.players === 'string') {
+          try {
+            data.players = JSON.parse(data.players);
+          } catch (e) {
+            console.error('Failed to parse players:', e);
+            data.players = [];
+          }
+        } else if (!Array.isArray(data.players)) {
+          data.players = [];
+        }
+      }
       return data as Room;
     } catch (error) {
       console.error('Error creating room:', error);
@@ -53,6 +67,21 @@ export const multiplayerService = {
         .single();
 
       if (error) throw error;
+      if (data) {
+        console.log('getRoomByCode raw data:', data);
+        // Ensure players is properly formatted
+        if (data.players && typeof data.players === 'string') {
+          try {
+            data.players = JSON.parse(data.players);
+          } catch (e) {
+            console.error('Failed to parse players:', e);
+            data.players = [];
+          }
+        } else if (!Array.isArray(data.players)) {
+          data.players = [];
+        }
+        console.log('getRoomByCode formatted data:', data);
+      }
       return data as Room;
     } catch (error) {
       console.error('Error fetching room:', error);
@@ -84,6 +113,20 @@ export const multiplayerService = {
         .single();
 
       if (error) throw error;
+      if (data) {
+        // Ensure players is properly formatted
+        if (data.players && typeof data.players === 'string') {
+          try {
+            data.players = JSON.parse(data.players);
+          } catch (e) {
+            console.error('Failed to parse players:', e);
+            data.players = [];
+          }
+        } else if (!Array.isArray(data.players)) {
+          data.players = [];
+        }
+        console.log('addPlayerToRoom response:', data);
+      }
       return data as Room;
     } catch (error) {
       console.error('Error adding player to room:', error);
@@ -131,6 +174,19 @@ export const multiplayerService = {
         .single();
 
       if (error) throw error;
+      if (data) {
+        // Ensure players is properly formatted
+        if (data.players && typeof data.players === 'string') {
+          try {
+            data.players = JSON.parse(data.players);
+          } catch (e) {
+            console.error('Failed to parse players:', e);
+            data.players = [];
+          }
+        } else if (!Array.isArray(data.players)) {
+          data.players = [];
+        }
+      }
       return data as Room;
     } catch (error) {
       console.error('Error starting auction:', error);
@@ -173,6 +229,50 @@ export const multiplayerService = {
 
     return () => {
       subscription.unsubscribe();
+    };
+  },
+
+  // Subscribe to real-time room changes using new API
+  subscribeToRoomChanges: (roomCode: string, callback: (room: Room) => void) => {
+    console.log('Subscribing to real-time room changes for:', roomCode);
+    
+    const channel = supabase
+      .channel(`room-${roomCode}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'rooms',
+          filter: `code=eq.${roomCode}`
+        },
+        async (payload) => {
+          console.log('Real-time update received:', payload);
+          if (payload.new) {
+            const data = payload.new as any;
+            // Ensure players is properly formatted
+            if (data.players && typeof data.players === 'string') {
+              try {
+                data.players = JSON.parse(data.players);
+              } catch (e) {
+                console.error('Failed to parse players:', e);
+                data.players = [];
+              }
+            } else if (!Array.isArray(data.players)) {
+              data.players = [];
+            }
+            console.log('Formatted room data:', data);
+            callback(data as Room);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
+
+    return () => {
+      console.log('Unsubscribing from room changes for:', roomCode);
+      supabase.removeChannel(channel);
     };
   },
 

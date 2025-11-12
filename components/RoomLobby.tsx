@@ -6,6 +6,17 @@ import { TEAMS, INITIAL_BUDGET } from '../constants';
 import Title from './Title';
 import { multiplayerService } from '../services/multiplayerService';
 
+interface Room {
+  id: string;
+  code: string;
+  host_username: string;
+  players: Array<{username: string, isHost: boolean}>;
+  status: 'waiting' | 'auction_started' | 'finished';
+  auction_teams?: any[];
+  created_at: string;
+  updated_at: string;
+}
+
 interface RoomLobbyProps {
   roomCode: string;
   username: string;
@@ -63,47 +74,36 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
 
     initializeRoom();
 
-    // Poll for room changes every 500ms
-    const pollInterval = setInterval(async () => {
-      try {
-        const room = await multiplayerService.getRoomByCode(roomCode);
-        if (room) {
-          const players = Array.isArray(room.players) ? room.players : [];
-          console.log('Polled room players:', players);
-          setRoomPlayers(players);
-          
-          // Check if auction has started
-          if (room.status === 'auction_started' && room.auction_teams && room.auction_teams.length > 0) {
-            // Find user's team from the room teams
-            let userTeam = room.auction_teams.find((t: Team) => t.id === `custom-${username.toLowerCase()}`);
-            
-            // If custom team not found, try to find by any team matching criteria
-            if (!userTeam) {
-              userTeam = room.auction_teams.find((t: Team) => t.isUser === true);
-            }
-            
-            // If still not found, use first team as fallback
-            if (!userTeam) {
-              userTeam = room.auction_teams[0];
-            }
-            
-            if (userTeam) {
-              console.log('Auction started! User team:', userTeam);
-              onStartAuction(room.auction_teams, userTeam);
-            }
-          }
+    // Subscribe to real-time room changes
+    const unsubscribe = multiplayerService.subscribeToRoomChanges(roomCode, (room: Room) => {
+      console.log('Room update from real-time:', room);
+      const players = Array.isArray(room.players) ? room.players : [];
+      setRoomPlayers(players);
+      
+      // Check if auction has started
+      if (room.status === 'auction_started' && room.auction_teams && room.auction_teams.length > 0) {
+        // Find user's team from the room teams
+        let userTeam = room.auction_teams.find((t: Team) => t.id === `custom-${username.toLowerCase()}`);
+        
+        // If custom team not found, try to find by any team matching criteria
+        if (!userTeam) {
+          userTeam = room.auction_teams.find((t: Team) => t.isUser === true);
         }
-      } catch (error) {
-        console.error('Error polling room:', error);
+        
+        // If still not found, use first team as fallback
+        if (!userTeam) {
+          userTeam = room.auction_teams[0];
+        }
+        
+        if (userTeam) {
+          console.log('Auction started! User team:', userTeam);
+          onStartAuction(room.auction_teams, userTeam);
+        }
       }
-    }, 500);
-
-    pollIntervalRef.current = pollInterval;
+    });
 
     return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-      }
+      unsubscribe();
       // Clean up room if host leaves
       if (isHost) {
         // Optionally implement room cleanup
