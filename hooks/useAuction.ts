@@ -135,6 +135,7 @@ const useAuction = (
         setCurrentBid(auctionState.currentBid);
       }
       if (auctionState.highestBidder !== undefined) {
+        console.log('[Auction Sync] Updating highest bidder to:', auctionState.highestBidder, 'Name:', auctionState.highestBidderName);
         setHighestBidder(auctionState.highestBidder);
       }
       if (auctionState.timer !== undefined) {
@@ -523,18 +524,19 @@ const useAuction = (
       
       // Sync to database in multiplayer mode
       if (roomCode) {
-        console.log('[Bid Sync] Syncing bid to database:', teamId, amount);
+        console.log('[Bid Sync] Syncing bid - Team:', team?.name, 'TeamID:', teamId, 'Amount:', amount);
         const auctionState = {
           currentPlayerIndex,
           currentBid: amount,
           highestBidder: teamId,
+          highestBidderName: team?.name, // Include team name for verification
           timer: BIDDING_TIME,
           teams,
           unsoldPlayers,
           status: 'bidding'
         };
         await multiplayerService.updateAuctionState(roomCode, auctionState);
-        console.log('[Bid Sync] Sync complete');
+        console.log('[Bid Sync] Sync complete - Highest bidder:', team?.name);
       }
     }
   }, [teams, unsoldPlayers, currentPlayerIndex, status, skippedTeams, resetTimer, updateAuctioneerMessage, roomCode]);

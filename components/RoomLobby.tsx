@@ -5,6 +5,7 @@ import { Team, ChatMessage } from '../types';
 import { TEAMS, INITIAL_BUDGET } from '../constants';
 import Title from './Title';
 import { multiplayerService } from '../services/multiplayerService';
+import { supabase } from '../services/supabaseClient';
 
 interface Room {
   id: string;
@@ -37,7 +38,7 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
 
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [customTeamName, setCustomTeamName] = useState('');
-  const [roomPlayers, setRoomPlayers] = useState<Array<{username: string, isHost: boolean}>>([]);
+  const [roomPlayers, setRoomPlayers] = useState<Array<{username: string, isHost: boolean, teamId?: string, teamName?: string}>>([]);
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -234,6 +235,29 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
       userTeamDetails = TEAMS.find(t => t.id === selectedTeamId)!;
     }
     
+    // FIRST: Update the room with team selections from all players
+    try {
+      const updatedPlayers = roomPlayers.map(player => 
+        player.username === username 
+          ? { ...player, teamId: userTeamDetails.id, teamName: userTeamDetails.name }
+          : player
+      );
+      
+      console.log('[Team Selection] Updating room with team data:', updatedPlayers);
+      // Update room players with team selection
+      const { data, error } = await supabase
+        .from('rooms')
+        .update({ players: updatedPlayers, updated_at: new Date().toISOString() })
+        .eq('code', roomCode)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      console.log('[Team Selection] Room updated successfully');
+    } catch (err) {
+      console.error('Error saving team selection:', err);
+    }
+    
     // Create the user's team for auction
     const userTeamForAuction: Team = { 
       ...userTeamDetails, 
@@ -243,16 +267,16 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
       isAI: false 
     };
     
-    // Build teams list from all players in room
+    // Build teams list using team selections from room players
     const allTeamsForAuction: Team[] = roomPlayers.map(player => {
       if (player.username === username) {
         // This is the current user's team
         return userTeamForAuction;
       } else {
-        // For other players, create a placeholder team
+        // Use stored team info from player, or create placeholder
         return {
-          id: `team-${player.username}`,
-          name: `${player.username}'s Team`,
+          id: player.teamId || `team-${player.username}`,
+          name: player.teamName || `${player.username}'s Team`,
           logo: CUSTOM_TEAM_LOGO,
           budget: INITIAL_BUDGET,
           players: [],
