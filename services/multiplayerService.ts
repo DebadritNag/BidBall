@@ -22,6 +22,14 @@ export const multiplayerService = {
   // Create a new room
   createRoom: async (roomCode: string, hostUsername: string): Promise<Room | null> => {
     try {
+      console.log('Creating room with code:', roomCode, 'and host:', hostUsername);
+      
+      // Check if Supabase is configured
+      if (!supabase || !supabase.from) {
+        console.error('Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+        return null;
+      }
+      
       const { data, error } = await supabase
         .from('rooms')
         .insert([
@@ -35,10 +43,17 @@ export const multiplayerService = {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error creating room:', error);
+        if (error.message && error.message.includes('relation "public.rooms" does not exist')) {
+          console.error('Database tables not created. Please run the migration SQL first.');
+        }
+        throw error;
+      }
       console.log('createRoom response:', data);
       if (data) {
         // Ensure players is properly formatted
+        console.log('createRoom response players type:', typeof data.players, 'value:', data.players);
         if (data.players && typeof data.players === 'string') {
           try {
             data.players = JSON.parse(data.players);
@@ -47,8 +62,10 @@ export const multiplayerService = {
             data.players = [];
           }
         } else if (!Array.isArray(data.players)) {
+          console.log('createRoom players not array, resetting');
           data.players = [];
         }
+        console.log('createRoom final players:', data.players);
       }
       return data as Room;
     } catch (error) {
@@ -60,31 +77,47 @@ export const multiplayerService = {
   // Get room by code
   getRoomByCode: async (roomCode: string): Promise<Room | null> => {
     try {
+      console.log('Fetching room by code:', roomCode);
       const { data, error } = await supabase
         .from('rooms')
         .select('*')
         .eq('code', roomCode)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching room:', error);
+        if (error.code === 'PGRST116') {
+          console.error('Room not found in database');
+        }
+        throw error;
+      }
       if (data) {
         console.log('getRoomByCode raw data:', data);
+        console.log('getRoomByCode raw players type:', typeof data.players, 'value:', data.players);
         // Ensure players is properly formatted
         if (data.players && typeof data.players === 'string') {
           try {
             data.players = JSON.parse(data.players);
+            console.log('Parsed players from string:', data.players);
           } catch (e) {
             console.error('Failed to parse players:', e);
             data.players = [];
           }
+        } else if (data.players === null || data.players === undefined) {
+          console.log('Players is null/undefined, setting to empty array');
+          data.players = [];
         } else if (!Array.isArray(data.players)) {
+          console.log('Players is not array, type:', typeof data.players, 'converting...');
           data.players = [];
         }
-        console.log('getRoomByCode formatted data:', data);
+        console.log('getRoomByCode formatted data:', data, 'players count:', data.players.length);
       }
       return data as Room;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching room:', error);
+      if (error?.message?.includes('relation "public.rooms" does not exist')) {
+        console.error('Database tables not created. Run migration in Supabase SQL Editor.');
+      }
       return null;
     }
   },
@@ -92,18 +125,26 @@ export const multiplayerService = {
   // Add player to room
   addPlayerToRoom: async (roomCode: string, username: string): Promise<Room | null> => {
     try {
+      console.log('Adding player to room:', roomCode, 'player:', username);
       const room = await multiplayerService.getRoomByCode(roomCode);
-      if (!room) return null;
+      if (!room) {
+        console.error('Room not found:', roomCode);
+        return null;
+      }
 
       // Ensure players is an array
       const currentPlayers = Array.isArray(room.players) ? room.players : [];
       
       // Check if player already exists
       const playerExists = currentPlayers.some((p: any) => p.username === username);
-      if (playerExists) return room;
+      if (playerExists) {
+        console.log('Player already in room:', username);
+        return room;
+      }
 
       // Add new player
       const updatedPlayers = [...currentPlayers, { username, isHost: false }];
+      console.log('Updated players array:', updatedPlayers);
       
       const { data, error } = await supabase
         .from('rooms')
@@ -112,7 +153,10 @@ export const multiplayerService = {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error adding player:', error);
+        throw error;
+      }
       if (data) {
         // Ensure players is properly formatted
         if (data.players && typeof data.players === 'string') {
@@ -128,8 +172,11 @@ export const multiplayerService = {
         console.log('addPlayerToRoom response:', data);
       }
       return data as Room;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding player to room:', error);
+      if (error?.message?.includes('relation "public.rooms" does not exist')) {
+        console.error('Database tables not created. Run migration in Supabase SQL Editor.');
+      }
       return null;
     }
   },
@@ -203,8 +250,11 @@ export const multiplayerService = {
         }
       }
       return data as Room;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error starting auction:', error);
+      if (error?.message?.includes('relation "public.rooms" does not exist')) {
+        console.error('Database tables not created. Run migration in Supabase SQL Editor.');
+      }
       return null;
     }
   },

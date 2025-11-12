@@ -65,11 +65,26 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
           setMessages([{ sender: 'System', text: `Welcome to the lobby, ${username}!`, isUser: false }]);
         } else {
           console.log('No room returned from service');
-          setMessages([{ sender: 'System', text: 'Failed to create/join room', isUser: false }]);
+          setMessages([{ 
+            sender: 'System', 
+            text: '⚠️ Database Setup Required: Please run the SQL migration in Supabase. Go to SQL Editor in Supabase Dashboard and run the SQL from: database/migrations/001_create_multiplayer_tables.sql', 
+            isUser: false 
+          }]);
         }
       } catch (error) {
         console.error('Error initializing room:', error);
-        setMessages([{ sender: 'System', text: 'Error connecting to room. Please try again.', isUser: false }]);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        
+        let helpText = `Error: ${errorMsg}`;
+        if (errorMsg.includes('relations')) {
+          helpText = '⚠️ Database Setup Required: Please run the SQL migration in Supabase. Go to SQL Editor in Supabase Dashboard and copy-paste all SQL from: database/migrations/001_create_multiplayer_tables.sql';
+        }
+        
+        setMessages([{ 
+          sender: 'System', 
+          text: helpText, 
+          isUser: false 
+        }]);
       }
     };
 
@@ -118,10 +133,14 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
     // Add polling as backup (every 2 seconds)
     const pollInterval = setInterval(async () => {
       try {
+        console.log('Polling room:', roomCode);
         const room = await multiplayerService.getRoomByCode(roomCode);
         if (room) {
           const players = Array.isArray(room.players) ? room.players : [];
+          console.log('Polling result - players count:', players.length, 'players:', players);
           setRoomPlayers(players);
+        } else {
+          console.log('Room not found in polling');
         }
       } catch (error) {
         console.error('Polling error:', error);
@@ -218,7 +237,8 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
       const result = await multiplayerService.startAuction(roomCode, allTeamsForAuction);
       
       if (!result) {
-        setMessages(prev => [...prev, { sender: 'System', text: 'Error starting auction. Please try again.', isUser: false }]);
+        const errorMsg = '⚠️ Database Setup Required: Please run the SQL migration in Supabase. Go to SQL Editor in Supabase Dashboard and run the SQL from: database/migrations/001_create_multiplayer_tables.sql';
+        setMessages(prev => [...prev, { sender: 'System', text: errorMsg, isUser: false }]);
         return;
       }
       
@@ -228,7 +248,12 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
       onStartAuction(allTeamsForAuction, userTeamForAuction);
     } catch (error) {
       console.error('Error starting auction:', error);
-      setMessages(prev => [...prev, { sender: 'System', text: 'Error starting auction. Please try again.', isUser: false }]);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      let helpText = `Error starting auction: ${errorMsg}`;
+      if (errorMsg.includes('relations') || errorMsg.includes('rooms')) {
+        helpText = '⚠️ Database Setup Required: Please run the SQL migration in Supabase. Go to SQL Editor in Supabase Dashboard and run the SQL from: database/migrations/001_create_multiplayer_tables.sql';
+      }
+      setMessages(prev => [...prev, { sender: 'System', text: helpText, isUser: false }]);
     }
   };
   
