@@ -37,6 +37,7 @@ const useAuction = (
   const aiActionTimeoutRef = useRef<number | null>(null);
   const userTeamId = userTeamConfig.id;
   const usernameRef = useRef<string>(''); // Store username for multiplayer
+  const readyCheckIntervalRef = useRef<any>(null); // Track the ready check interval
 
   useEffect(() => {
     const fetchPlayerData = async () => {
@@ -146,6 +147,16 @@ const useAuction = (
       unsubscribe();
     };
   }, [roomCode, status]);
+
+  // Cleanup ready check interval when status changes or component unmounts
+  useEffect(() => {
+    return () => {
+      if (readyCheckIntervalRef.current) {
+        clearInterval(readyCheckIntervalRef.current);
+        readyCheckIntervalRef.current = null;
+      }
+    };
+  }, [status]);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -345,12 +356,25 @@ const useAuction = (
       const playerUsername = username || userTeamConfig.name;
       await multiplayerService.updateBiddingStatus(roomCode, playerUsername, true);
       
-      let checkInterval: any = null;
+      // Clear any existing interval
+      if (readyCheckIntervalRef.current) {
+        clearInterval(readyCheckIntervalRef.current);
+        readyCheckIntervalRef.current = null;
+      }
       
       // Subscribe to room changes to detect when all players are ready
       const checkAllReady = async () => {
         const room = await multiplayerService.getRoomByCode(roomCode);
         if (!room) return;
+        
+        // If auction already started, stop checking
+        if (room.status !== 'waiting') {
+          if (readyCheckIntervalRef.current) {
+            clearInterval(readyCheckIntervalRef.current);
+            readyCheckIntervalRef.current = null;
+          }
+          return;
+        }
         
         const players = Array.isArray(room.players) ? room.players : [];
         const readyPlayers = players.filter((p: any) => p.isReady);
@@ -361,9 +385,9 @@ const useAuction = (
           setWaitingForPlayers(false);
           
           // Clear the interval immediately
-          if (checkInterval) {
-            clearInterval(checkInterval);
-            checkInterval = null;
+          if (readyCheckIntervalRef.current) {
+            clearInterval(readyCheckIntervalRef.current);
+            readyCheckIntervalRef.current = null;
           }
           
           // Load or create shuffled player order
@@ -385,12 +409,13 @@ const useAuction = (
       
       // Check immediately and set up polling
       await checkAllReady();
-      checkInterval = setInterval(checkAllReady, 1000);
+      readyCheckIntervalRef.current = setInterval(checkAllReady, 1000);
       
       // Clean up interval after 30 seconds as a fallback
       setTimeout(() => {
-        if (checkInterval) {
-          clearInterval(checkInterval);
+        if (readyCheckIntervalRef.current) {
+          clearInterval(readyCheckIntervalRef.current);
+          readyCheckIntervalRef.current = null;
         }
       }, 30000);
       
