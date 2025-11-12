@@ -12,6 +12,7 @@ CREATE TABLE public.rooms (
   players JSONB DEFAULT '[]'::jsonb,
   status VARCHAR(50) DEFAULT 'waiting' CHECK (status IN ('waiting', 'auction_started', 'finished')),
   auction_teams JSONB,
+  auction_players JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
   CONSTRAINT room_code_length CHECK (char_length(code) = 6)
@@ -114,3 +115,6 @@ CREATE TRIGGER update_rooms_updated_at
 BEFORE UPDATE ON public.rooms
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+-- Add auction_players column if it doesn't exist
+ALTER TABLE public.rooms ADD COLUMN IF NOT EXISTS auction_players JSONB;

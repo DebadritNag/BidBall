@@ -285,6 +285,63 @@ export const multiplayerService = {
     }
   },
 
+  // Update room with bidding status (track who's ready to start)
+  updateBiddingStatus: async (roomCode: string, username: string, isReady: boolean): Promise<Room | null> => {
+    try {
+      const room = await multiplayerService.getRoomByCode(roomCode);
+      if (!room) return null;
+
+      // Update player's ready status
+      const updatedPlayers = Array.isArray(room.players) ? room.players.map((p: any) => 
+        p.username === username ? { ...p, isReady } : p
+      ) : [];
+
+      const { data, error } = await supabase
+        .from('rooms')
+        .update({ 
+          players: updatedPlayers,
+          updated_at: new Date().toISOString()
+        })
+        .eq('code', roomCode)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        if (data.players && typeof data.players === 'string') {
+          data.players = JSON.parse(data.players);
+        }
+      }
+      return data as Room;
+    } catch (error) {
+      console.error('Error updating bidding status:', error);
+      return null;
+    }
+  },
+
+  // Initialize shuffled players and store in room
+  initializeAuctionPlayers: async (roomCode: string, shuffledPlayers: any[]): Promise<Room | null> => {
+    try {
+      console.log('Storing shuffled players in room:', shuffledPlayers.length);
+      const { data, error } = await supabase
+        .from('rooms')
+        .update({ 
+          auction_players: shuffledPlayers,
+          updated_at: new Date().toISOString()
+        })
+        .eq('code', roomCode)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Room;
+    } catch (error) {
+      console.error('Error initializing auction players:', error);
+      return null;
+    }
+  },
+
   // End auction
   endAuction: async (roomCode: string, teams: any[]): Promise<Room | null> => {
     try {
