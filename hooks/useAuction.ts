@@ -37,37 +37,34 @@ const useAuction = (
         // Try to fetch from Supabase first
         const dbPlayers = await playerService.fetchAllPlayers();
         if (dbPlayers && dbPlayers.length > 0) {
+          console.log('Loaded players from Supabase:', dbPlayers.length);
           setAllPlayers(dbPlayers);
-        } else {
-          // Fall back to JSON file if no players in database
-          const response = await fetch('/data/playerData.json');
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          const data = await response.json();
-          // Convert numeric IDs to strings
-          const playersWithStringIds = data.map((p: any) => ({
-            ...p,
-            id: String(p.id),
-          }));
-          setAllPlayers(playersWithStringIds);
+          return;
         }
       } catch (error) {
-        console.error('Failed to fetch player data:', error);
-        // Final fallback: load from JSON
-        try {
-          const response = await fetch('/data/playerData.json');
-          const data = await response.json();
-          const playersWithStringIds = data.map((p: any) => ({
-            ...p,
-            id: String(p.id),
-          }));
-          setAllPlayers(playersWithStringIds);
-        } catch (jsonError) {
-          console.error('Failed to fetch player data from JSON:', jsonError);
+        console.error('Failed to fetch from Supabase:', error);
+      }
+      
+      // Fall back to JSON file
+      try {
+        const response = await fetch('/data/playerData.json');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
         }
+        const data = await response.json();
+        console.log('Loaded players from JSON:', data.length);
+        // Convert numeric IDs to strings
+        const playersWithStringIds = data.map((p: any) => ({
+          ...p,
+          id: String(p.id),
+        }));
+        setAllPlayers(playersWithStringIds);
+      } catch (jsonError) {
+        console.error('Failed to fetch player data from JSON:', jsonError);
       }
     };
+    
+    // Start fetching immediately
     fetchPlayerData();
   }, []);
 
@@ -274,29 +271,55 @@ const useAuction = (
     // Set teams first
     setTeams(initialTeamsConfig);
     
-    // Use allPlayers if available, otherwise create mock players
-    let playersToAuction = allPlayers;
-    if (allPlayers.length === 0) {
-      console.log('Player data is not loaded yet. Creating mock players as fallback.');
-      // Create mock players if data didn't load
-      playersToAuction = initialTeamsConfig.map((team, index) => ({
-        id: String(index),
-        name: `Player ${index + 1}`,
-        nationality: 'Unknown',
-        position: 'Midfielder' as const,
-        rating: 80 + Math.random() * 15,
-        basePrice: 500000 + Math.random() * 1000000,
-      }));
+    const startWithPlayers = (players: Player[]) => {
+      if (!players || players.length === 0) {
+        console.error('No players available for auction');
+        return;
+      }
+      const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
+      setUnsoldPlayers(shuffledPlayers);
+      setCurrentPlayerIndex(0);
+      const firstPlayer = shuffledPlayers[0];
+      setStatus('bidding');
+      setCurrentBid(firstPlayer.basePrice);
+      resetTimer();
+      updateAuctioneerMessage({ eventType: 'NEW_PLAYER', playerName: firstPlayer.name, basePrice: firstPlayer.basePrice });
+      console.log('Auction started with player:', firstPlayer.name);
+    };
+
+    // If players are already loaded, start immediately
+    if (allPlayers && allPlayers.length > 0) {
+      console.log('Starting auction with', allPlayers.length, 'players');
+      startWithPlayers(allPlayers);
+    } else {
+      console.log('Players not loaded yet, attempting to load...');
+      // Fetch players synchronously if not already loaded
+      fetch('/data/playerData.json')
+        .then(response => response.json())
+        .then(data => {
+          console.log('Loaded', data.length, 'players from JSON');
+          const playersWithStringIds = data.map((p: any) => ({
+            ...p,
+            id: String(p.id),
+          }));
+          setAllPlayers(playersWithStringIds);
+          startWithPlayers(playersWithStringIds);
+        })
+        .catch(error => {
+          console.error('Failed to load player data:', error);
+          // Only create mock players if JSON loading fails
+          const playersToAuction = initialTeamsConfig.map((team, index) => ({
+            id: String(index),
+            name: `Player ${index + 1}`,
+            nationality: 'Unknown',
+            position: 'Midfielder' as const,
+            rating: 80 + Math.random() * 15,
+            basePrice: 500000 + Math.random() * 1000000,
+          }));
+          console.log('Using mock players as fallback');
+          startWithPlayers(playersToAuction);
+        });
     }
-    
-    const shuffledPlayers = [...playersToAuction].sort(() => Math.random() - 0.5)
-    setUnsoldPlayers(shuffledPlayers);
-    setCurrentPlayerIndex(0);
-    const firstPlayer = shuffledPlayers[0];
-    setStatus('bidding');
-    setCurrentBid(firstPlayer.basePrice);
-    resetTimer();
-    updateAuctioneerMessage({ eventType: 'NEW_PLAYER', playerName: firstPlayer.name, basePrice: firstPlayer.basePrice });
   }, [initialTeamsConfig, resetTimer, updateAuctioneerMessage, allPlayers]);
 
 
