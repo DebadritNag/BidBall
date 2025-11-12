@@ -288,7 +288,7 @@ const useAuction = (
     });
   }, [currentPlayerIndex, resetTimer, updateAuctioneerMessage, initializeReAuction, teams, onAuctionEnd]);
 
-  const handleSale = useCallback(() => {
+  const handleSale = useCallback(async () => {
     stopTimer();
     const player = unsoldPlayers[currentPlayerIndex];
 
@@ -313,7 +313,7 @@ const useAuction = (
           }
         }
         
-        setTeams(prevTeams => prevTeams.map(team => {
+        const updatedTeams = teams.map(team => {
             if (team.id === highestBidder) {
                 return {
                     ...team,
@@ -322,17 +322,54 @@ const useAuction = (
                 };
             }
             return team;
-        }));
+        });
+        
+        setTeams(updatedTeams);
+        
+        // Sync updated teams to database in multiplayer mode
+        if (roomCode) {
+          console.log('[Sale Sync] Syncing sold player to database');
+          const auctionState = {
+            currentPlayerIndex,
+            currentBid,
+            highestBidder,
+            highestBidderName: winningTeam?.name,
+            timer: 0,
+            teams: updatedTeams,
+            unsoldPlayers,
+            status: 'sold'
+          };
+          await multiplayerService.updateAuctionState(roomCode, auctionState);
+          console.log('[Sale Sync] Sync complete');
+        }
     } else {
         setStatus('unsold');
         updateAuctioneerMessage({ eventType: 'PLAYER_UNSOLD', playerName: player.name });
         // Remove unsold player from the unsold list for re-auction consideration
         // Don't decrement index here - nextPlayer will handle it
         setUnsoldPlayers(prev => prev.filter((_, index) => index !== currentPlayerIndex));
+        
+        // Sync unsold status to database in multiplayer mode
+        if (roomCode) {
+          console.log('[Unsold Sync] Syncing unsold status to database');
+          const updatedUnsoldPlayers = unsoldPlayers.filter((_, index) => index !== currentPlayerIndex);
+          const auctionState = {
+            currentPlayerIndex,
+            currentBid,
+            highestBidder: null,
+            highestBidderName: null,
+            timer: 0,
+            teams,
+            unsoldPlayers: updatedUnsoldPlayers,
+            status: 'unsold'
+          };
+          await multiplayerService.updateAuctionState(roomCode, auctionState);
+          console.log('[Unsold Sync] Sync complete');
+        }
     }
 
     setTimeout(nextPlayer, POST_SALE_DELAY);
-  }, [stopTimer, unsoldPlayers, currentPlayerIndex, highestBidder, currentBid, teams, nextPlayer, updateAuctioneerMessage]);
+  }, [stopTimer, unsoldPlayers, currentPlayerIndex, highestBidder, currentBid, teams, nextPlayer, updateAuctioneerMessage, roomCode]);
 
   useEffect(() => {
     if (timer === 3 && status === 'bidding' && highestBidder) {

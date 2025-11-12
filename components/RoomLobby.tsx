@@ -11,7 +11,7 @@ interface Room {
   id: string;
   code: string;
   host_username: string;
-  players: Array<{username: string, isHost: boolean, isReady?: boolean}>;
+  players: Array<{username: string, isHost: boolean, isReady?: boolean, teamId?: string, teamName?: string}>;
   status: 'waiting' | 'auction_started' | 'bidding_ready' | 'finished';
   auction_teams?: any[];
   auction_players?: any[];
@@ -103,30 +103,40 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
       // Check if auction has started
       if (room.status === 'auction_started' && room.auction_teams && room.auction_teams.length > 0) {
         console.log('Auction detected! Auction teams:', room.auction_teams);
-        // Find user's team from the room teams
-        let userTeam = room.auction_teams.find((t: Team) => t.id === `custom-${username.toLowerCase()}`);
         
-        // If custom team not found, try to find by user flag
-        if (!userTeam) {
-          userTeam = room.auction_teams.find((t: Team) => t.isUser === true);
+        // Find user's team by matching the teamId that was created with their username
+        // First, find the player entry for this user
+        const currentPlayer = Array.isArray(room.players) ? room.players.find((p: any) => p.username === username) : null;
+        console.log('[Team Match] Current player:', currentPlayer);
+        
+        let userTeam;
+        if (currentPlayer?.teamId) {
+          // Find team by the locked team ID
+          userTeam = room.auction_teams.find((t: Team) => t.id === currentPlayer.teamId);
+          console.log('[Team Match] Found team by locked ID:', userTeam);
         }
         
-        // If still not found, try to find by username
+        // Fallback: try to find by custom team ID pattern
         if (!userTeam) {
-          userTeam = room.auction_teams.find((t: Team) => t.id.includes(username));
+          userTeam = room.auction_teams.find((t: Team) => t.id === `custom-${username.toLowerCase()}`);
+          console.log('[Team Match] Found team by custom ID:', userTeam);
         }
         
-        // Last resort: use first user team
+        // Fallback: try to find by team-username pattern
         if (!userTeam) {
-          userTeam = room.auction_teams.find((t: Team) => t.isAI === false);
+          userTeam = room.auction_teams.find((t: Team) => t.id === `team-${username}`);
+          console.log('[Team Match] Found team by team-username:', userTeam);
         }
         
-        // If still nothing, use first team
+        // Last resort: use first team
         if (!userTeam) {
           userTeam = room.auction_teams[0];
+          console.log('[Team Match] Using first team as fallback:', userTeam);
         }
         
         if (userTeam) {
+          // Mark this team as the user's team
+          userTeam.isUser = true;
           console.log('Auction started! User team:', userTeam);
           onStartAuction(room.auction_teams, userTeam, roomCode);
         }
@@ -146,26 +156,40 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
           // Check if auction has started during polling
           if (room.status === 'auction_started' && room.auction_teams && room.auction_teams.length > 0) {
             console.log('Auction detected via polling! Auction teams:', room.auction_teams);
-            // Find user's team from the room teams
-            let userTeam = room.auction_teams.find((t: Team) => t.id === `custom-${username.toLowerCase()}`);
             
-            if (!userTeam) {
-              userTeam = room.auction_teams.find((t: Team) => t.isUser === true);
+            // Find user's team by matching the teamId that was created with their username
+            // First, find the player entry for this user
+            const currentPlayer = Array.isArray(room.players) ? room.players.find((p: any) => p.username === username) : null;
+            console.log('[Team Match] Current player:', currentPlayer);
+            
+            let userTeam;
+            if (currentPlayer?.teamId) {
+              // Find team by the locked team ID
+              userTeam = room.auction_teams.find((t: Team) => t.id === currentPlayer.teamId);
+              console.log('[Team Match] Found team by locked ID:', userTeam);
             }
             
+            // Fallback: try to find by custom team ID pattern
             if (!userTeam) {
-              userTeam = room.auction_teams.find((t: Team) => t.id.includes(username));
+              userTeam = room.auction_teams.find((t: Team) => t.id === `custom-${username.toLowerCase()}`);
+              console.log('[Team Match] Found team by custom ID:', userTeam);
             }
             
+            // Fallback: try to find by team-username pattern
             if (!userTeam) {
-              userTeam = room.auction_teams.find((t: Team) => t.isAI === false);
+              userTeam = room.auction_teams.find((t: Team) => t.id === `team-${username}`);
+              console.log('[Team Match] Found team by team-username:', userTeam);
             }
             
+            // Last resort: use first team
             if (!userTeam) {
               userTeam = room.auction_teams[0];
+              console.log('[Team Match] Using first team as fallback:', userTeam);
             }
             
             if (userTeam) {
+              // Mark this team as the user's team
+              userTeam.isUser = true;
               console.log('Auction started via polling! User team:', userTeam);
               // Clear the polling interval before transitioning
               clearInterval(pollInterval);
@@ -322,6 +346,7 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
     };
     
     // Build teams list using team selections from room players
+    // DO NOT set isUser here - each client will determine their own team
     const allTeamsForAuction: Team[] = roomPlayers.map(player => {
       // Check if this player has locked their team
       if (player.teamId && player.teamName) {
@@ -332,14 +357,11 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
           logo: CUSTOM_TEAM_LOGO, // Will be updated if it's a predefined team
           budget: INITIAL_BUDGET,
           players: [],
-          isUser: player.username === username,
+          isUser: false, // Will be updated by each client based on their username
           isAI: false
         };
-      } else if (player.username === username) {
-        // Fallback for current user if not locked
-        return userTeamForAuction;
       } else {
-        // Placeholder for other players who haven't locked yet
+        // Placeholder for players who haven't locked yet
         return {
           id: `team-${player.username}`,
           name: `${player.username}'s Team`,
