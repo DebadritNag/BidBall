@@ -7,12 +7,14 @@ import { playerService } from '../services/playerService';
 import { bidService } from '../services/bidService';
 import { auctionService } from '../services/auctionService';
 import { teamService } from '../services/teamService';
+import { multiplayerService } from '../services/multiplayerService';
 import playerDataImport from '@/data/playerData.json' assert { type: 'json' };
 
 const useAuction = (
   initialTeamsConfig: Team[],
   userTeamConfig: Team,
-  onAuctionEnd: (teams: Team[]) => void
+  onAuctionEnd: (teams: Team[]) => void,
+  roomCode?: string // Optional room code for multiplayer sync
 ) => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
@@ -27,6 +29,8 @@ const useAuction = (
   const [isMuted, setIsMuted] = useState(false);
   const [reAuctionPlayers, setReAuctionPlayers] = useState<Player[]>([]);
   const [reAuctionRound, setReAuctionRound] = useState(0);
+  const [waitingForPlayers, setWaitingForPlayers] = useState(false);
+  const [playersReady, setPlayersReady] = useState<string[]>([]);
   
   const timerRef = useRef<number | null>(null);
   const aiActionTimeoutRef = useRef<number | null>(null);
@@ -108,6 +112,38 @@ const useAuction = (
     }
     handleSpeech();
   }, [auctioneerMessage, isMuted]);
+
+  // Subscribe to auction state updates in multiplayer mode
+  useEffect(() => {
+    if (!roomCode || status !== 'bidding') return;
+
+    console.log('Setting up auction state sync for room:', roomCode);
+    const unsubscribe = multiplayerService.subscribeToAuctionState(roomCode, (auctionState) => {
+      console.log('Auction state update received:', auctionState);
+      
+      // Update local state from remote auction state
+      if (auctionState.currentPlayerIndex !== undefined) {
+        setCurrentPlayerIndex(auctionState.currentPlayerIndex);
+      }
+      if (auctionState.currentBid !== undefined) {
+        setCurrentBid(auctionState.currentBid);
+      }
+      if (auctionState.highestBidder !== undefined) {
+        setHighestBidder(auctionState.highestBidder);
+      }
+      if (auctionState.timer !== undefined) {
+        setTimer(auctionState.timer);
+      }
+      if (auctionState.teams) {
+        setTeams(auctionState.teams);
+      }
+    });
+
+    return () => {
+      console.log('Cleaning up auction state sync');
+      unsubscribe();
+    };
+  }, [roomCode, status]);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -269,7 +305,7 @@ const useAuction = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timer, status]);
 
-  const startAuction = useCallback(() => {
+  const startAuction = useCallback(async () => {
     // Set teams first
     setTeams(initialTeamsConfig);
     
@@ -278,10 +314,21 @@ const useAuction = (
         console.error('No players available for auction');
         return;
       }
-      const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
-      setUnsoldPlayers(shuffledPlayers);
+      
+      let playersToUse = players;
+      
+      // For multiplayer, check if shuffled players already exist in room
+      if (roomCode) {
+        // Will be loaded from room data if available
+        console.log('Multiplayer mode: will use shared player order');
+      } else {
+        // Single player: shuffle locally
+        playersToUse = [...players].sort(() => Math.random() - 0.5);
+      }
+      
+      setUnsoldPlayers(playersToUse);
       setCurrentPlayerIndex(0);
-      const firstPlayer = shuffledPlayers[0];
+      const firstPlayer = playersToUse[0];
       setStatus('bidding');
       setCurrentBid(firstPlayer.basePrice);
       resetTimer();
@@ -289,7 +336,53 @@ const useAuction = (
       console.log('Auction started with player:', firstPlayer.name);
     };
 
-    // If players are already loaded, start immediately
+    // For multiplayer: mark player as ready and wait for all players
+    if (roomCode) {
+      setWaitingForPlayers(true);
+      // Update player ready status
+      await multiplayerService.updateBiddingStatus(roomCode, userTeamConfig.name, true);
+      
+      // Subscribe to room changes to detect when all players are ready
+      const checkAllReady = async () => {
+        const room = await multiplayerService.getRoomByCode(roomCode);
+        if (!room) return;
+        
+        const players = Array.isArray(room.players) ? room.players : [];
+        const readyPlayers = players.filter((p: any) => p.isReady);
+        setPlayersReady(readyPlayers.map((p: any) => p.username));
+        
+        // Check if all players are ready
+        if (readyPlayers.length === players.length && players.length > 0) {
+          setWaitingForPlayers(false);
+          
+          // Load or create shuffled player order
+          let shuffledPlayers = (room as any).auction_players as Player[] | null;
+          
+          if (!shuffledPlayers || shuffledPlayers.length === 0) {
+            // First player ready: shuffle and store
+            if (allPlayers && allPlayers.length > 0) {
+              shuffledPlayers = [...allPlayers].sort(() => Math.random() - 0.5);
+              await multiplayerService.initializeAuctionPlayers(roomCode, shuffledPlayers);
+            }
+          }
+          
+          if (shuffledPlayers && shuffledPlayers.length > 0) {
+            startWithPlayers(shuffledPlayers);
+          }
+        }
+      };
+      
+      // Check immediately and set up polling
+      await checkAllReady();
+      const checkInterval = setInterval(checkAllReady, 1000);
+      
+      // Clean up interval after 30 seconds or when ready
+      setTimeout(() => clearInterval(checkInterval), 30000);
+      
+      return;
+    }
+
+    // Single player mode: start immediately
     if (allPlayers && allPlayers.length > 0) {
       console.log('Starting auction with', allPlayers.length, 'players');
       startWithPlayers(allPlayers);
@@ -320,10 +413,10 @@ const useAuction = (
         startWithPlayers(playersToAuction);
       }
     }
-  }, [initialTeamsConfig, resetTimer, updateAuctioneerMessage, allPlayers]);
+  }, [initialTeamsConfig, resetTimer, updateAuctioneerMessage, allPlayers, roomCode, userTeamConfig]);
 
 
-  const placeBid = useCallback((teamId: string, amount: number) => {
+  const placeBid = useCallback(async (teamId: string, amount: number) => {
     // MULTIPLAYER: A socket listener for 'bid-placed' would call this function for all clients.
     const team = teams.find(t => t.id === teamId);
     const player = unsoldPlayers[currentPlayerIndex];
@@ -340,8 +433,20 @@ const useAuction = (
       setHighestBidder(teamId);
       resetTimer();
       updateAuctioneerMessage({ eventType: 'BID_PLACED', bidAmount: amount, teamName: team.name });
+      
+      // Sync to database in multiplayer mode
+      if (roomCode) {
+        const auctionState = {
+          currentPlayerIndex,
+          currentBid: amount,
+          highestBidder: teamId,
+          timer: BIDDING_TIME,
+          teams
+        };
+        await multiplayerService.updateAuctionState(roomCode, auctionState);
+      }
     }
-  }, [teams, unsoldPlayers, currentPlayerIndex, status, skippedTeams, resetTimer, updateAuctioneerMessage]);
+  }, [teams, unsoldPlayers, currentPlayerIndex, status, skippedTeams, resetTimer, updateAuctioneerMessage, roomCode]);
 
 
   const skipPlayer = useCallback((teamId: string) => {
@@ -433,7 +538,9 @@ const useAuction = (
     userHasSkipped: skippedTeams.has(userTeamId),
     startAuction,
     isMuted,
-    toggleMute
+    toggleMute,
+    waitingForPlayers,
+    playersReady
   };
 };
 

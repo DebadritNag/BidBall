@@ -342,6 +342,58 @@ export const multiplayerService = {
     }
   },
 
+  // Update current auction state (current player, bids, etc.)
+  updateAuctionState: async (roomCode: string, auctionState: any): Promise<Room | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('rooms')
+        .update({ 
+          auction_state: auctionState,
+          updated_at: new Date().toISOString()
+        })
+        .eq('code', roomCode)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Room;
+    } catch (error) {
+      console.error('Error updating auction state:', error);
+      return null;
+    }
+  },
+
+  // Subscribe to auction state changes
+  subscribeToAuctionState: (roomCode: string, callback: (auctionState: any) => void) => {
+    let isSubscribed = true;
+    
+    const channel = supabase
+      .channel(`auction-${roomCode}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rooms',
+          filter: `code=eq.${roomCode}`
+        },
+        async (payload) => {
+          if (payload.new && isSubscribed) {
+            const data = payload.new as any;
+            if (data.auction_state) {
+              callback(data.auction_state);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      isSubscribed = false;
+      supabase.removeChannel(channel);
+    };
+  },
+
   // End auction
   endAuction: async (roomCode: string, teams: any[]): Promise<Room | null> => {
     try {

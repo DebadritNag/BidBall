@@ -73,7 +73,7 @@ const App: React.FC = () => {
     setGameState('room-lobby');
   }, []);
   
-  const handleStartMultiplayerAuction = useCallback((teams: Team[], selectedUserTeam: Team) => {
+  const handleStartMultiplayerAuction = useCallback((teams: Team[], selectedUserTeam: Team, roomCodeParam: string) => {
     if (!teams || teams.length === 0 || !selectedUserTeam) {
       console.error('Invalid auction data:', { teams, selectedUserTeam });
       setError('Failed to start auction. Please try again.');
@@ -81,6 +81,7 @@ const App: React.FC = () => {
     }
     setUserTeam(selectedUserTeam);
     setFinalTeams(teams);
+    setRoomCode(roomCodeParam); // Keep room code for multiplayer sync
     setGameState('auction');
   }, []);
 
@@ -146,6 +147,7 @@ const App: React.FC = () => {
             userTeam={userTeam}
             username={user.username}
             onAuctionEnd={handleAuctionEnd}
+            roomCode={roomCode || undefined}
           />
         )}
         {gameState === 'auction' && (!userTeam || !user || finalTeams.length === 0) && (

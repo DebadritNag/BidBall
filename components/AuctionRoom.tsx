@@ -15,9 +15,10 @@ interface AuctionRoomProps {
   userTeam: Team;
   username: string;
   onAuctionEnd: (teams: Team[]) => void;
+  roomCode?: string; // Optional room code for multiplayer
 }
 
-const AuctionRoom: React.FC<AuctionRoomProps> = ({ initialTeams, userTeam, username, onAuctionEnd }) => {
+const AuctionRoom: React.FC<AuctionRoomProps> = ({ initialTeams, userTeam, username, onAuctionEnd, roomCode }) => {
   const {
     status,
     teams,
@@ -32,8 +33,10 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ initialTeams, userTeam, usern
     userHasSkipped,
     startAuction,
     isMuted,
-    toggleMute
-  } = useAuction(initialTeams, userTeam, onAuctionEnd);
+    toggleMute,
+    waitingForPlayers,
+    playersReady
+  } = useAuction(initialTeams, userTeam, onAuctionEnd, roomCode);
   
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -121,6 +124,8 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ initialTeams, userTeam, usern
             isUserTurn={isUserTurn}
             userHasSkipped={userHasSkipped}
             winningTeam={status === 'sold' ? teams.find(t => t.id === highestBidder) : undefined}
+            waitingForPlayers={waitingForPlayers}
+            playersReady={playersReady}
           />
         </div>
         <div className="lg:col-span-1 flex flex-col gap-4">

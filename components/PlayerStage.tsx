@@ -19,11 +19,14 @@ interface PlayerStageProps {
   isUserTurn: boolean;
   userHasSkipped: boolean;
   winningTeam?: Team;
+  waitingForPlayers?: boolean;
+  playersReady?: string[];
 }
 
 const PlayerStage: React.FC<PlayerStageProps> = ({
   status, player, currentBid, highestBidderName, timer, auctioneerMessage,
-  onStartAuction, onPlaceBid, onSkip, isUserTurn, userHasSkipped, winningTeam
+  onStartAuction, onPlaceBid, onSkip, isUserTurn, userHasSkipped, winningTeam,
+  waitingForPlayers, playersReady
 }) => {
 
   const getTimerColor = () => {
@@ -38,6 +41,30 @@ const PlayerStage: React.FC<PlayerStageProps> = ({
   };
 
   const stageContent = () => {
+    // Show waiting screen if waiting for players
+    if (waitingForPlayers) {
+      return (
+        <div className="text-center">
+          <h2 className="text-3xl font-bold mb-6 text-yellow-400">Waiting for All Players...</h2>
+          <div className="inline-block">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mb-4 mx-auto"></div>
+          </div>
+          {playersReady && playersReady.length > 0 && (
+            <div className="mt-4">
+              <p className="text-gray-300 mb-2">Ready: {playersReady.length} players</p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {playersReady.map(username => (
+                  <span key={username} className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
+                    {username} ✓
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+    
     if (status === 'pre-auction') {
       return (
         <div className="text-center">

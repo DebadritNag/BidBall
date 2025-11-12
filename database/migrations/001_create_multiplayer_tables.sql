@@ -118,3 +118,6 @@ EXECUTE FUNCTION update_updated_at_column();
 
 -- Add auction_players column if it doesn't exist
 ALTER TABLE public.rooms ADD COLUMN IF NOT EXISTS auction_players JSONB;
+
+-- Add auction_state column for real-time bid synchronization
+ALTER TABLE public.rooms ADD COLUMN IF NOT EXISTS auction_state JSONB;

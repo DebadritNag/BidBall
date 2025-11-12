@@ -10,9 +10,10 @@ interface Room {
   id: string;
   code: string;
   host_username: string;
-  players: Array<{username: string, isHost: boolean}>;
+  players: Array<{username: string, isHost: boolean, isReady?: boolean}>;
   status: 'waiting' | 'auction_started' | 'finished';
   auction_teams?: any[];
+  auction_players?: any[];
   created_at: string;
   updated_at: string;
 }
@@ -21,7 +22,7 @@ interface RoomLobbyProps {
   roomCode: string;
   username: string;
   isHost: boolean;
-  onStartAuction: (teams: Team[], userTeam: Team) => void;
+  onStartAuction: (teams: Team[], userTeam: Team, roomCode: string) => void;
   onBack: () => void;
 }
 
@@ -125,7 +126,7 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
         
         if (userTeam) {
           console.log('Auction started! User team:', userTeam);
-          onStartAuction(room.auction_teams, userTeam);
+          onStartAuction(room.auction_teams, userTeam, roomCode);
         }
       }
     });
@@ -166,7 +167,7 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
               console.log('Auction started via polling! User team:', userTeam);
               // Clear the polling interval before transitioning
               clearInterval(pollInterval);
-              onStartAuction(room.auction_teams, userTeam);
+              onStartAuction(room.auction_teams, userTeam, roomCode);
             }
           }
         } else {
@@ -275,7 +276,7 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
       console.log('Auction update sent to database:', result);
       
       // Trigger the auction for this client
-      onStartAuction(allTeamsForAuction, userTeamForAuction);
+      onStartAuction(allTeamsForAuction, userTeamForAuction, roomCode);
     } catch (error) {
       console.error('Error starting auction:', error);
       const errorMsg = error instanceof Error ? error.message : String(error);
