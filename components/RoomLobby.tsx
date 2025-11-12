@@ -139,6 +139,36 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
           const players = Array.isArray(room.players) ? room.players : [];
           console.log('Polling result - players count:', players.length, 'players:', players);
           setRoomPlayers(players);
+          
+          // Check if auction has started during polling
+          if (room.status === 'auction_started' && room.auction_teams && room.auction_teams.length > 0) {
+            console.log('Auction detected via polling! Auction teams:', room.auction_teams);
+            // Find user's team from the room teams
+            let userTeam = room.auction_teams.find((t: Team) => t.id === `custom-${username.toLowerCase()}`);
+            
+            if (!userTeam) {
+              userTeam = room.auction_teams.find((t: Team) => t.isUser === true);
+            }
+            
+            if (!userTeam) {
+              userTeam = room.auction_teams.find((t: Team) => t.id.includes(username));
+            }
+            
+            if (!userTeam) {
+              userTeam = room.auction_teams.find((t: Team) => t.isAI === false);
+            }
+            
+            if (!userTeam) {
+              userTeam = room.auction_teams[0];
+            }
+            
+            if (userTeam) {
+              console.log('Auction started via polling! User team:', userTeam);
+              // Clear the polling interval before transitioning
+              clearInterval(pollInterval);
+              onStartAuction(room.auction_teams, userTeam);
+            }
+          }
         } else {
           console.log('Room not found in polling');
         }
