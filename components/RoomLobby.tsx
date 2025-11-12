@@ -323,20 +323,40 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
     
     // Build teams list using team selections from room players
     const allTeamsForAuction: Team[] = roomPlayers.map(player => {
-      if (player.username === username) {
-        // This is the current user's team
+      // Check if this player has locked their team
+      if (player.teamId && player.teamName) {
+        // Use locked team info
+        return {
+          id: player.teamId,
+          name: player.teamName,
+          logo: CUSTOM_TEAM_LOGO, // Will be updated if it's a predefined team
+          budget: INITIAL_BUDGET,
+          players: [],
+          isUser: player.username === username,
+          isAI: false
+        };
+      } else if (player.username === username) {
+        // Fallback for current user if not locked
         return userTeamForAuction;
       } else {
-        // Use stored team info from player, or create placeholder
+        // Placeholder for other players who haven't locked yet
         return {
-          id: player.teamId || `team-${player.username}`,
-          name: player.teamName || `${player.username}'s Team`,
+          id: `team-${player.username}`,
+          name: `${player.username}'s Team`,
           logo: CUSTOM_TEAM_LOGO,
           budget: INITIAL_BUDGET,
           players: [],
           isUser: false,
           isAI: false
         };
+      }
+    });
+    
+    // Update predefined team logos
+    allTeamsForAuction.forEach(team => {
+      const predefinedTeam = TEAMS.find(t => t.id === team.id);
+      if (predefinedTeam) {
+        team.logo = predefinedTeam.logo;
       }
     });
 

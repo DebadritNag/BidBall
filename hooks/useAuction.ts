@@ -121,6 +121,13 @@ const useAuction = (
     if (!roomCode) return;
     // Only subscribe when auction is active (not pre-auction or waiting)
     if (status === 'pre-auction' || waitingForPlayers) return;
+    
+    // Don't unsubscribe on 'unsold' status - that's part of normal auction flow
+    // Only unsubscribe when auction is truly finished
+    if (status === 'finished') {
+      console.log('[Auction Sync] Auction finished, cleaning up');
+      return;
+    }
 
     console.log('[Auction Sync] Setting up for room:', roomCode, 'status:', status);
     const unsubscribe = multiplayerService.subscribeToAuctionState(roomCode, (auctionState) => {
@@ -137,6 +144,14 @@ const useAuction = (
       if (auctionState.highestBidder !== undefined) {
         console.log('[Auction Sync] Updating highest bidder to:', auctionState.highestBidder, 'Name:', auctionState.highestBidderName);
         setHighestBidder(auctionState.highestBidder);
+        // Update auctioneer message with correct team name from synced state
+        if (auctionState.highestBidderName) {
+          updateAuctioneerMessage({ 
+            eventType: 'BID_PLACED', 
+            bidAmount: auctionState.currentBid, 
+            teamName: auctionState.highestBidderName 
+          });
+        }
       }
       if (auctionState.timer !== undefined) {
         setTimer(auctionState.timer);
@@ -506,7 +521,17 @@ const useAuction = (
 
   const placeBid = useCallback(async (teamId: string, amount: number) => {
     // MULTIPLAYER: A socket listener for 'bid-placed' would call this function for all clients.
-    const team = teams.find(t => t.id === teamId);
+    
+    // For multiplayer, we need to ensure we're using the correct team info
+    let team;
+    if (roomCode) {
+      // In multiplayer, get team from the synced teams array
+      team = teams.find(t => t.id === teamId);
+    } else {
+      // In single player, use local teams
+      team = teams.find(t => t.id === teamId);
+    }
+    
     const player = unsoldPlayers[currentPlayerIndex];
     if (!team || !player || status !== 'bidding' || skippedTeams.has(teamId)) return;
 
@@ -605,8 +630,16 @@ const useAuction = (
     // MULTIPLAYER: This would emit a 'place-bid' event to the server.
     // e.g., socket.emit('place-bid', { teamId: userTeamId, amount: currentBid + BID_INCREMENT });
     if (status !== 'bidding') return;
-    placeBid(userTeamId, currentBid + BID_INCREMENT);
-  }, [userTeamId, status, currentBid, placeBid]);
+    
+    // Ensure we're using the correct team ID from the synced teams
+    const currentUserTeam = teams.find(t => t.isUser);
+    if (currentUserTeam) {
+      console.log('[User Bid] Placing bid for team:', currentUserTeam.id, currentUserTeam.name);
+      placeBid(currentUserTeam.id, currentBid + BID_INCREMENT);
+    } else {
+      console.error('[User Bid] Could not find current user team');
+    }
+  }, [userTeamId, status, currentBid, placeBid, teams]);
   
   const handleUserSkip = useCallback(() => {
     // MULTIPLAYER: This would emit a 'skip-player' event to the server.
