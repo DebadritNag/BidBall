@@ -11,7 +11,7 @@ interface Room {
   code: string;
   host_username: string;
   players: Array<{username: string, isHost: boolean, isReady?: boolean}>;
-  status: 'waiting' | 'auction_started' | 'finished';
+  status: 'waiting' | 'auction_started' | 'bidding_ready' | 'finished';
   auction_teams?: any[];
   auction_players?: any[];
   created_at: string;

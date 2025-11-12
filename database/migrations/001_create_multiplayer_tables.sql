@@ -10,7 +10,7 @@ CREATE TABLE public.rooms (
   code VARCHAR(10) UNIQUE NOT NULL,
   host_username VARCHAR(255) NOT NULL,
   players JSONB DEFAULT '[]'::jsonb,
-  status VARCHAR(50) DEFAULT 'waiting' CHECK (status IN ('waiting', 'auction_started', 'finished')),
+  status VARCHAR(50) DEFAULT 'waiting' CHECK (status IN ('waiting', 'auction_started', 'bidding_ready', 'finished')),
   auction_teams JSONB,
   auction_players JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
@@ -121,3 +121,7 @@ ALTER TABLE public.rooms ADD COLUMN IF NOT EXISTS auction_players JSONB;
 
 -- Add auction_state column for real-time bid synchronization
 ALTER TABLE public.rooms ADD COLUMN IF NOT EXISTS auction_state JSONB;
+
+-- Update status constraint to include bidding_ready
+ALTER TABLE public.rooms DROP CONSTRAINT IF EXISTS rooms_status_check;
+ALTER TABLE public.rooms ADD CONSTRAINT rooms_status_check CHECK (status IN ('waiting', 'auction_started', 'bidding_ready', 'finished'));

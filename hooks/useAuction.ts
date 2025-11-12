@@ -367,15 +367,31 @@ const useAuction = (
       const checkAllReady = async () => {
         const room = await multiplayerService.getRoomByCode(roomCode);
         if (!room) {
-          console.log('[Ready Check] Room not found');
+          console.log('[Ready Check] Room not found - stopping interval');
+          if (readyCheckIntervalRef.current) {
+            clearInterval(readyCheckIntervalRef.current);
+            readyCheckIntervalRef.current = null;
+          }
+          setWaitingForPlayers(false);
+          setAuctioneerMessage('Error: Room not found. Please refresh and try again.');
           return;
         }
         
         console.log('[Ready Check] Room status:', room.status);
         
-        // If auction already started, stop checking
-        if (room.status !== 'waiting') {
-          console.log('[Ready Check] Auction already started, stopping');
+        // If bidding already started, stop checking
+        if (room.status === 'bidding_ready') {
+          console.log('[Ready Check] Bidding already started, stopping');
+          if (readyCheckIntervalRef.current) {
+            clearInterval(readyCheckIntervalRef.current);
+            readyCheckIntervalRef.current = null;
+          }
+          return;
+        }
+        
+        // Only check readiness if in auction_started status
+        if (room.status !== 'auction_started') {
+          console.log('[Ready Check] Wrong status, stopping');
           if (readyCheckIntervalRef.current) {
             clearInterval(readyCheckIntervalRef.current);
             readyCheckIntervalRef.current = null;
