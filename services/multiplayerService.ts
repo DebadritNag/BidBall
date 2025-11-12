@@ -30,23 +30,27 @@ export const multiplayerService = {
         return null;
       }
       
+      const roomData = {
+        code: roomCode,
+        host_username: hostUsername,
+        players: [{ username: hostUsername, isHost: true }],
+        status: 'waiting',
+      };
+      
+      console.log('Room data to insert:', roomData);
+      
       // First, try to insert the room
       const { data: insertData, error: insertError } = await supabase
         .from('rooms')
-        .insert([
-          {
-            code: roomCode,
-            host_username: hostUsername,
-            players: [{ username: hostUsername, isHost: true }],
-            status: 'waiting',
-          }
-        ])
+        .insert([roomData])
         .select()
         .single();
 
       if (insertError) {
-        console.error('Supabase error creating room:', insertError);
-        console.error('Error details:', insertError.code, insertError.message, insertError.details);
+        console.error('Supabase error on insert:', insertError);
+        console.error('Error code:', insertError.code);
+        console.error('Error message:', insertError.message);
+        console.error('Error details:', insertError.details);
         // Don't throw, try to fetch the room instead (it might have been created)
       } else if (insertData) {
         console.log('createRoom insert success:', insertData);
@@ -64,8 +68,22 @@ export const multiplayerService = {
         return insertData as Room;
       }
       
-      // Fallback: fetch the room to confirm it was created
-      console.log('Fetching created room as fallback...');
+      // Fallback: try insert without select
+      console.log('Trying insert without select...');
+      const { error: insertError2 } = await supabase
+        .from('rooms')
+        .insert([roomData]);
+      
+      if (insertError2) {
+        console.error('Insert without select also failed:', insertError2);
+        console.error('Error code:', insertError2.code);
+        console.error('Error message:', insertError2.message);
+      } else {
+        console.log('Insert succeeded without select');
+      }
+      
+      // Final fallback: fetch the room to confirm it was created
+      console.log('Fetching created room as final fallback...');
       const room = await multiplayerService.getRoomByCode(roomCode);
       if (room) {
         console.log('Room found after creation:', room);
@@ -75,7 +93,7 @@ export const multiplayerService = {
       console.error('Failed to create or retrieve room');
       return null;
     } catch (error) {
-      console.error('Error creating room:', error);
+      console.error('Error creating room (caught exception):', error);
       return null;
     }
   },
