@@ -162,6 +162,7 @@ export const multiplayerService = {
   // Start auction
   startAuction: async (roomCode: string, teams: any[]): Promise<Room | null> => {
     try {
+      console.log('Starting auction with teams:', teams);
       const { data, error } = await supabase
         .from('rooms')
         .update({
@@ -173,7 +174,12 @@ export const multiplayerService = {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error starting auction:', error);
+        throw error;
+      }
+      
+      console.log('Auction started, response:', data);
       if (data) {
         // Ensure players is properly formatted
         if (data.players && typeof data.players === 'string') {
@@ -185,6 +191,15 @@ export const multiplayerService = {
           }
         } else if (!Array.isArray(data.players)) {
           data.players = [];
+        }
+        // Ensure auction_teams is properly formatted
+        if (data.auction_teams && typeof data.auction_teams === 'string') {
+          try {
+            data.auction_teams = JSON.parse(data.auction_teams);
+          } catch (e) {
+            console.error('Failed to parse auction_teams:', e);
+            data.auction_teams = [];
+          }
         }
       }
       return data as Room;
@@ -216,26 +231,20 @@ export const multiplayerService = {
     }
   },
 
-  // Subscribe to room changes (real-time)
-  subscribeToRoom: (roomCode: string, callback: (room: Room) => void) => {
-    const subscription = supabase
-      .from(`rooms:code=eq.${roomCode}`)
-      .on('*', (payload) => {
-        if (payload.new) {
-          callback(payload.new as Room);
-        }
-      })
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  },
-
   // Subscribe to real-time room changes using new API
   subscribeToRoomChanges: (roomCode: string, callback: (room: Room) => void) => {
     console.log('Subscribing to real-time room changes for:', roomCode);
     
+    let isSubscribed = true;
+    
+    // Start with initial fetch
+    multiplayerService.getRoomByCode(roomCode).then(room => {
+      if (room && isSubscribed) {
+        callback(room);
+      }
+    }).catch(err => console.error('Initial room fetch failed:', err));
+    
+    // Set up real-time subscription
     const channel = supabase
       .channel(`room-${roomCode}`)
       .on(
@@ -248,7 +257,7 @@ export const multiplayerService = {
         },
         async (payload) => {
           console.log('Real-time update received:', payload);
-          if (payload.new) {
+          if (payload.new && isSubscribed) {
             const data = payload.new as any;
             // Ensure players is properly formatted
             if (data.players && typeof data.players === 'string') {
@@ -261,6 +270,15 @@ export const multiplayerService = {
             } else if (!Array.isArray(data.players)) {
               data.players = [];
             }
+            // Also ensure auction_teams is properly formatted
+            if (data.auction_teams && typeof data.auction_teams === 'string') {
+              try {
+                data.auction_teams = JSON.parse(data.auction_teams);
+              } catch (e) {
+                console.error('Failed to parse auction_teams:', e);
+                data.auction_teams = [];
+              }
+            }
             console.log('Formatted room data:', data);
             callback(data as Room);
           }
@@ -272,6 +290,7 @@ export const multiplayerService = {
 
     return () => {
       console.log('Unsubscribing from room changes for:', roomCode);
+      isSubscribed = false;
       supabase.removeChannel(channel);
     };
   },

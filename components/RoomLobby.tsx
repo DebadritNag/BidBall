@@ -60,11 +60,12 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
         if (room) {
           console.log('Room initialized:', room);
           const players = Array.isArray(room.players) ? room.players : [];
-          console.log('Room players:', players);
+          console.log('Room players from init:', players);
           setRoomPlayers(players);
           setMessages([{ sender: 'System', text: `Welcome to the lobby, ${username}!`, isUser: false }]);
         } else {
           console.log('No room returned from service');
+          setMessages([{ sender: 'System', text: 'Failed to create/join room', isUser: false }]);
         }
       } catch (error) {
         console.error('Error initializing room:', error);
@@ -78,19 +79,31 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
     const unsubscribe = multiplayerService.subscribeToRoomChanges(roomCode, (room: Room) => {
       console.log('Room update from real-time:', room);
       const players = Array.isArray(room.players) ? room.players : [];
+      console.log('Updated room players:', players);
       setRoomPlayers(players);
       
       // Check if auction has started
       if (room.status === 'auction_started' && room.auction_teams && room.auction_teams.length > 0) {
+        console.log('Auction detected! Auction teams:', room.auction_teams);
         // Find user's team from the room teams
         let userTeam = room.auction_teams.find((t: Team) => t.id === `custom-${username.toLowerCase()}`);
         
-        // If custom team not found, try to find by any team matching criteria
+        // If custom team not found, try to find by user flag
         if (!userTeam) {
           userTeam = room.auction_teams.find((t: Team) => t.isUser === true);
         }
         
-        // If still not found, use first team as fallback
+        // If still not found, try to find by username
+        if (!userTeam) {
+          userTeam = room.auction_teams.find((t: Team) => t.id.includes(username));
+        }
+        
+        // Last resort: use first user team
+        if (!userTeam) {
+          userTeam = room.auction_teams.find((t: Team) => t.isAI === false);
+        }
+        
+        // If still nothing, use first team
         if (!userTeam) {
           userTeam = room.auction_teams[0];
         }
@@ -101,14 +114,32 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
         }
       }
     });
+    
+    // Add polling as backup (every 2 seconds)
+    const pollInterval = setInterval(async () => {
+      try {
+        const room = await multiplayerService.getRoomByCode(roomCode);
+        if (room) {
+          const players = Array.isArray(room.players) ? room.players : [];
+          setRoomPlayers(players);
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+    }, 2000);
+    
+    pollIntervalRef.current = pollInterval;
 
     return () => {
       unsubscribe();
-      // Clean up room if host leaves
-      if (isHost) {
-        // Optionally implement room cleanup
-      } else {
-        multiplayerService.removePlayerFromRoom(roomCode, username);
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+      // Clean up room if player leaves
+      if (!isHost) {
+        multiplayerService.removePlayerFromRoom(roomCode, username).catch(err => 
+          console.error('Error removing player from room:', err)
+        );
       }
     };
   }, [roomCode, username, isHost, onStartAuction]);
@@ -133,11 +164,17 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
   };
 
   const handleStart = async () => {
-    if (!selectedTeamId) return;
+    if (!selectedTeamId) {
+      setMessages(prev => [...prev, { sender: 'System', text: 'Please select a team first', isUser: false }]);
+      return;
+    }
     let userTeamDetails: Omit<Team, 'budget' | 'players' | 'isAI' | 'isUser'>;
 
     if (selectedTeamId === CUSTOM_TEAM_ID) {
-      if (customTeamName.trim().length < 3) return;
+      if (customTeamName.trim().length < 3) {
+        setMessages(prev => [...prev, { sender: 'System', text: 'Custom team name must be at least 3 characters', isUser: false }]);
+        return;
+      }
       userTeamDetails = {
         id: `custom-${username.toLowerCase()}`,
         name: customTeamName.trim(),
@@ -162,7 +199,7 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
         // This is the current user's team
         return userTeamForAuction;
       } else {
-        // For other players, create a placeholder team (they will update their selection)
+        // For other players, create a placeholder team
         return {
           id: `team-${player.username}`,
           name: `${player.username}'s Team`,
@@ -176,13 +213,22 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
     });
 
     try {
+      console.log('Starting auction with teams:', allTeamsForAuction);
       // Update room state to auction started in database
-      await multiplayerService.startAuction(roomCode, allTeamsForAuction);
+      const result = await multiplayerService.startAuction(roomCode, allTeamsForAuction);
+      
+      if (!result) {
+        setMessages(prev => [...prev, { sender: 'System', text: 'Error starting auction. Please try again.', isUser: false }]);
+        return;
+      }
+      
+      console.log('Auction update sent to database:', result);
       
       // Trigger the auction for this client
       onStartAuction(allTeamsForAuction, userTeamForAuction);
     } catch (error) {
       console.error('Error starting auction:', error);
+      setMessages(prev => [...prev, { sender: 'System', text: 'Error starting auction. Please try again.', isUser: false }]);
     }
   };
   
