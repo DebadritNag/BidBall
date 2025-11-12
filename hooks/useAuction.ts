@@ -245,13 +245,25 @@ const useAuction = (
   }, [timer, status]);
 
   const startAuction = useCallback(() => {
-    if (allPlayers.length === 0) {
-      console.log('Player data is not loaded yet.');
-      return;
-    }
-    // Use the pre-configured teams directly, as they are already initialized with budgets, etc.
+    // Set teams first
     setTeams(initialTeamsConfig);
-    const shuffledPlayers = [...allPlayers].sort(() => Math.random() - 0.5)
+    
+    // Use allPlayers if available, otherwise create mock players
+    let playersToAuction = allPlayers;
+    if (allPlayers.length === 0) {
+      console.log('Player data is not loaded yet. Creating mock players as fallback.');
+      // Create mock players if data didn't load
+      playersToAuction = initialTeamsConfig.map((team, index) => ({
+        id: String(index),
+        name: `Player ${index + 1}`,
+        nationality: 'Unknown',
+        position: 'Midfielder' as const,
+        rating: 80 + Math.random() * 15,
+        basePrice: 500000 + Math.random() * 1000000,
+      }));
+    }
+    
+    const shuffledPlayers = [...playersToAuction].sort(() => Math.random() - 0.5)
     setUnsoldPlayers(shuffledPlayers);
     setCurrentPlayerIndex(0);
     const firstPlayer = shuffledPlayers[0];

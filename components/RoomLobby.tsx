@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Team, ChatMessage } from '../types';
 import { TEAMS, INITIAL_BUDGET } from '../constants';
 import Title from './Title';
+import { roomSync } from '../services/roomSync';
 
 interface RoomLobbyProps {
   roomCode: string;
@@ -12,19 +13,6 @@ interface RoomLobbyProps {
   onStartAuction: (teams: Team[], userTeam: Team) => void;
   onBack: () => void;
 }
-
-const MOCK_PLAYERS = [
-  { username: 'AI_Bot_1', teamId: 't2' },
-  { username: 'AI_Bot_2', teamId: 't3' },
-];
-
-const MOCK_CHAT_MESSAGES = [
-    "Can't wait for this to start!",
-    "I've got my eyes on a certain midfielder.",
-    "Let's have a good auction everyone.",
-    "Who are you guys hoping to get?",
-    "My budget is ready!",
-];
 
 const CUSTOM_TEAM_ID = 'custom';
 const CUSTOM_TEAM_LOGO = 'https://img.icons8.com/plasticine/100/football.png';
@@ -35,8 +23,6 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
     { id: CUSTOM_TEAM_ID, name: 'Custom Team', logo: CUSTOM_TEAM_LOGO }
   ], []);
 
-  const takenTeams = useMemo(() => [], []);
-
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [customTeamName, setCustomTeamName] = useState('');
   const [roomPlayers, setRoomPlayers] = useState<Array<{username: string, isHost: boolean}>>([]);
@@ -44,19 +30,45 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const chatContainerRef = useRef<HTMLUListElement>(null);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
+  // Initialize room and subscribe to changes
   useEffect(() => {
-    // Initialize room players list with current user
-    setRoomPlayers([{ username, isHost }]);
-  }, [username, isHost]);
-
-  useEffect(() => {
+    // Initialize room
+    const roomState = roomSync.initializeRoom(roomCode, username, isHost);
+    setRoomPlayers(roomState.players);
     setMessages([{ sender: 'System', text: `Welcome to the lobby, ${username}!`, isUser: false }]);
-  }, [username]);
-  
+
+    // Subscribe to room changes
+    const unsubscribe = roomSync.subscribeToRoom(roomCode, (room) => {
+      setRoomPlayers(room.players);
+      
+      // Check if auction has started
+      if (room.status === 'auction_started' && room.auctionTeams) {
+        // Find user's team from the room teams
+        const userTeam = room.auctionTeams.find((t: Team) => t.id === `custom-${username.toLowerCase()}` || t.name === customTeamName);
+        if (userTeam) {
+          onStartAuction(room.auctionTeams, userTeam);
+        }
+      }
+    });
+
+    unsubscribeRef.current = unsubscribe;
+
+    return () => {
+      unsubscribe();
+      // Clean up room if host leaves
+      if (isHost) {
+        roomSync.cleanupRoom(roomCode);
+      } else {
+        roomSync.removePlayer(roomCode, username);
+      }
+    };
+  }, [roomCode, username, isHost, onStartAuction, customTeamName]);
+
   useEffect(() => {
     if (chatContainerRef.current) {
-        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
   
@@ -65,14 +77,13 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
     if (chatInput.trim() === '') return;
 
     const newMessage: ChatMessage = {
-        sender: username,
-        text: chatInput.trim(),
-        isUser: true,
+      sender: username,
+      text: chatInput.trim(),
+      isUser: true,
     };
     setMessages(prev => [...prev, newMessage]);
     setChatInput('');
   };
-
 
   const handleStart = () => {
     if (!selectedTeamId) return;
@@ -91,9 +102,27 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
     
     const userTeamForAuction: Team = { ...userTeamDetails, budget: INITIAL_BUDGET, players: [], isUser: true, isAI: false };
     
-    // In multiplayer, only include human players (no AI bots)
-    const allTeamsForAuction = [userTeamForAuction];
+    // Build teams list from all players in room
+    const allTeamsForAuction: Team[] = roomPlayers.map(player => {
+      let teamDetails = userTeamForAuction;
+      if (player.username !== username) {
+        // For other players, create a default team (they will select their own)
+        teamDetails = {
+          id: `team-${player.username}`,
+          name: `${player.username}'s Team`,
+          logo: CUSTOM_TEAM_LOGO,
+          budget: INITIAL_BUDGET,
+          players: [],
+          isUser: player.username === username,
+          isAI: false
+        };
+      }
+      return teamDetails;
+    });
 
+    // Update room state to auction started
+    roomSync.startAuction(roomCode, allTeamsForAuction);
+    
     onStartAuction(allTeamsForAuction, userTeamForAuction);
   };
   
@@ -123,17 +152,14 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
             <div>
-                <h3 className="text-xl font-semibold text-yellow-400 mb-4 border-b-2 border-yellow-500/20 pb-2">Players in Room</h3>
+                <h3 className="text-xl font-semibold text-yellow-400 mb-4 border-b-2 border-yellow-500/20 pb-2">Players in Room ({roomPlayers.length})</h3>
                 <ul className="space-y-3">
-                    <li className="bg-green-500/10 p-3 rounded-lg flex justify-between items-center border border-green-500/30">
-                        <span className="font-bold">{username} (You)</span>
-                        <span className="text-sm text-gray-300">{isHost ? 'Host' : 'Player'}</span>
-                    </li>
-                    {roomPlayers.filter(p => p.username !== username).map(player => (
+                    {roomPlayers.map(player => (
                         <li key={player.username} className={`p-3 rounded-lg flex justify-between items-center border ${
+                          player.username === username ? 'bg-green-500/10 border-green-500/30' : 
                           player.isHost ? 'bg-blue-500/10 border-blue-500/30' : 'bg-gray-700/50 border-gray-700'
                         }`}>
-                            <span className="font-bold">{player.username}</span>
+                            <span className="font-bold">{player.username} {player.username === username ? '(You)' : ''}</span>
                             <span className="text-sm text-gray-300">{player.isHost ? 'Host' : 'Player'}</span>
                         </li>
                     ))}
@@ -143,15 +169,13 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
                 <h3 className="text-xl font-semibold text-yellow-400 mb-4 border-b-2 border-yellow-500/20 pb-2">Select Your Team</h3>
                 <div className="grid grid-cols-2 gap-3">
                     {allTeamOptions.map(team => {
-                        const isTaken = takenTeams.includes(team.id);
-                        
                         return (
                             <div
                                 key={team.id}
-                                onClick={() => !isTaken && setSelectedTeamId(team.id)}
+                                onClick={() => setSelectedTeamId(team.id)}
                                 className={`p-3 rounded-lg transition-all duration-300 border-2 flex items-center gap-3 relative ${
                                     selectedTeamId === team.id ? 'bg-yellow-500/20 border-yellow-500' : 'bg-gray-700/50 border-transparent'
-                                } ${isTaken ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-yellow-500/50'}`}
+                                } cursor-pointer hover:border-yellow-500/50`}
                             >
                                 <img src={team.logo} alt={team.name} className="w-10 h-10" />
                                 <p className="font-semibold text-sm">{team.name}</p>
@@ -196,20 +220,23 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-6 overflow-hidden max-w-md mx-auto"
+                className="mb-6 overflow-hidden"
                 >
-                <label htmlFor="customTeamNameLobby" className="block text-yellow-300 text-sm font-bold mb-2">
+                <div className="bg-gray-900/50 p-6 rounded-lg border border-yellow-500/30 w-full max-w-md mx-auto">
+                  <label htmlFor="customTeamNameLobby" className="block text-yellow-300 text-sm font-bold mb-3">
                     Custom Team Name
-                </label>
-                <input
-                    type="text"
-                    id="customTeamNameLobby"
-                    value={customTeamName}
-                    onChange={(e) => setCustomTeamName(e.target.value)}
-                    placeholder="Enter your team name (min 3 chars)"
-                    className="w-full bg-gray-700/50 text-white border-2 border-gray-600 rounded-lg py-3 px-4 focus:outline-none focus:border-yellow-500 transition-colors duration-300"
-                    minLength={3}
-                />
+                  </label>
+                  <input
+                      type="text"
+                      id="customTeamNameLobby"
+                      value={customTeamName}
+                      onChange={(e) => setCustomTeamName(e.target.value)}
+                      placeholder="Enter your team name (min 3 chars)"
+                      className="w-full bg-gray-700/50 text-white border-2 border-gray-600 rounded-lg py-2 px-3 focus:outline-none focus:border-yellow-500 transition-colors duration-300 mb-4"
+                      minLength={3}
+                  />
+                  <p className="text-xs text-gray-400">Enter at least 3 characters for your custom team name.</p>
+                </div>
                 </motion.div>
             )}
         </AnimatePresence>
@@ -222,6 +249,7 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
               onClick={handleStart}
               disabled={isStartDisabled || !isHost}
               className="bg-yellow-500 text-gray-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-400 transition-colors duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed"
+              title={!isHost ? "Only the host can start the auction" : ""}
             >
               Start Auction
             </button>
