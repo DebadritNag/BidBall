@@ -17,6 +17,7 @@ const App: React.FC = () => {
   const [finalTeams, setFinalTeams] = useState<Team[]>([]);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [isRoomHost, setIsRoomHost] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGoToSignup = useCallback(() => setGameState('signup'), []);
   
@@ -73,6 +74,11 @@ const App: React.FC = () => {
   }, []);
   
   const handleStartMultiplayerAuction = useCallback((teams: Team[], selectedUserTeam: Team) => {
+    if (!teams || teams.length === 0 || !selectedUserTeam) {
+      console.error('Invalid auction data:', { teams, selectedUserTeam });
+      setError('Failed to start auction. Please try again.');
+      return;
+    }
     setUserTeam(selectedUserTeam);
     setFinalTeams(teams);
     setGameState('auction');
@@ -89,10 +95,17 @@ const App: React.FC = () => {
     setFinalTeams([]);
     setRoomCode(null);
     setIsRoomHost(false);
+    setError(null);
   }, []);
 
   return (
     <div className="bg-gray-900 text-white min-h-screen font-sans overflow-x-hidden">
+      {error && (
+        <div className="fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-xl font-bold">&times;</button>
+        </div>
+      )}
       <AnimatePresence mode="wait">
         {gameState === 'landing' && (
           <LandingPage key="landing" onGetStarted={handleGoToSignup} />
@@ -126,7 +139,7 @@ const App: React.FC = () => {
               onBack={handleGoToLobby}
             />
         )}
-        {gameState === 'auction' && userTeam && user && (
+        {gameState === 'auction' && userTeam && user && finalTeams.length > 0 && (
           <AuctionRoom
             key="auction-room"
             initialTeams={finalTeams}
@@ -134,6 +147,20 @@ const App: React.FC = () => {
             username={user.username}
             onAuctionEnd={handleAuctionEnd}
           />
+        )}
+        {gameState === 'auction' && (!userTeam || !user || finalTeams.length === 0) && (
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold mb-4">Error Loading Auction</h1>
+              <p className="text-gray-400 mb-6">Failed to load auction data. Please try again.</p>
+              <button 
+                onClick={() => setGameState('lobby')}
+                className="bg-yellow-500 text-gray-900 font-bold py-2 px-6 rounded-lg hover:bg-yellow-400 transition-colors"
+              >
+                Back to Lobby
+              </button>
+            </div>
+          </div>
         )}
         {gameState === 'summary' && (
           <AuctionSummary key="summary" teams={finalTeams} onRestart={handleRestart} />

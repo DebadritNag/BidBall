@@ -174,15 +174,35 @@ const useAuction = (
   const nextPlayer = useCallback(() => {
     if (aiActionTimeoutRef.current) clearTimeout(aiActionTimeoutRef.current);
 
-    if (currentPlayerIndex >= unsoldPlayers.length - 1) {
+    if (!unsoldPlayers || unsoldPlayers.length === 0) {
+      // No more players, end auction
+      setStatus('finished');
+      onAuctionEnd(teams);
+      return;
+    }
+
+    // Check if current index is out of bounds (happens when we remove unsold player)
+    let nextIndex = currentPlayerIndex;
+    if (currentPlayerIndex >= unsoldPlayers.length) {
+      nextIndex = unsoldPlayers.length - 1;
+    }
+
+    if (nextIndex >= unsoldPlayers.length - 1) {
       // Auction round complete, check if re-auction is needed
       initializeReAuction();
       return;
     }
     
-    const nextIndex = currentPlayerIndex + 1;
+    nextIndex = nextIndex + 1;
     setCurrentPlayerIndex(nextIndex);
     const player = unsoldPlayers[nextIndex];
+
+    if (!player) {
+      // Player not found, end auction
+      setStatus('finished');
+      onAuctionEnd(teams);
+      return;
+    }
 
     setStatus('bidding');
     setCurrentBid(player.basePrice);
@@ -191,11 +211,17 @@ const useAuction = (
     resetTimer();
     updateAuctioneerMessage({ eventType: 'NEW_PLAYER', playerName: player.name, basePrice: player.basePrice });
     // MULTIPLAYER: Host would emit a 'next-player' event to the server here.
-  }, [currentPlayerIndex, unsoldPlayers, resetTimer, updateAuctioneerMessage, initializeReAuction]);
+  }, [currentPlayerIndex, unsoldPlayers, resetTimer, updateAuctioneerMessage, initializeReAuction, teams, onAuctionEnd]);
 
   const handleSale = useCallback(() => {
     stopTimer();
     const player = unsoldPlayers[currentPlayerIndex];
+
+    if (!player) {
+      // Player not found, move to next
+      setTimeout(nextPlayer, POST_SALE_DELAY);
+      return;
+    }
 
     if (highestBidder) {
         setStatus('sold');

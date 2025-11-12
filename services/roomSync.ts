@@ -97,6 +97,13 @@ export const roomSync = {
   subscribeToRoom: (roomCode: string, callback: (room: RoomState) => void): (() => void) => {
     let lastTimestamp = 0;
     
+    // Call immediately with current state
+    const currentRoom = roomSync.getRoomState(roomCode);
+    if (currentRoom) {
+      callback(currentRoom);
+      lastTimestamp = currentRoom.timestamp;
+    }
+    
     const interval = setInterval(() => {
       const room = roomSync.getRoomState(roomCode);
       if (room && room.timestamp > lastTimestamp) {

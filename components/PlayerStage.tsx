@@ -52,8 +52,26 @@ const PlayerStage: React.FC<PlayerStageProps> = ({
       );
     }
 
+    if (status === 'finished' || status === 're-auction') {
+      return (
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-yellow-400 mb-4">
+            {status === 'finished' ? 'Auction Complete!' : 'Re-Auction Round'}
+          </h2>
+          <p className="text-gray-300">{auctioneerMessage}</p>
+        </div>
+      );
+    }
+
     if (!player) {
-      return <div className="text-center text-xl">Waiting for next player...</div>;
+      return (
+        <div className="text-center">
+          <div className="inline-block">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mb-4"></div>
+            <p className="text-xl text-gray-300">Loading next player...</p>
+          </div>
+        </div>
+      );
     }
 
     return (

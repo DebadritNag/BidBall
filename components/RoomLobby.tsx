@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Team, ChatMessage } from '../types';
 import { TEAMS, INITIAL_BUDGET } from '../constants';
 import Title from './Title';
-import { roomSync } from '../services/roomSync';
+import { multiplayerService } from '../services/multiplayerService';
 
 interface RoomLobbyProps {
   roomCode: string;
@@ -31,40 +31,80 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
   const [chatInput, setChatInput] = useState('');
   const chatContainerRef = useRef<HTMLUListElement>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize room and subscribe to changes
   useEffect(() => {
-    // Initialize room
-    const roomState = roomSync.initializeRoom(roomCode, username, isHost);
-    setRoomPlayers(roomState.players);
-    setMessages([{ sender: 'System', text: `Welcome to the lobby, ${username}!`, isUser: false }]);
-
-    // Subscribe to room changes
-    const unsubscribe = roomSync.subscribeToRoom(roomCode, (room) => {
-      setRoomPlayers(room.players);
-      
-      // Check if auction has started
-      if (room.status === 'auction_started' && room.auctionTeams) {
-        // Find user's team from the room teams
-        const userTeam = room.auctionTeams.find((t: Team) => t.id === `custom-${username.toLowerCase()}` || t.name === customTeamName);
-        if (userTeam) {
-          onStartAuction(room.auctionTeams, userTeam);
+    const initializeRoom = async () => {
+      try {
+        let room;
+        if (isHost) {
+          // Create new room
+          room = await multiplayerService.createRoom(roomCode, username);
+        } else {
+          // Join existing room
+          room = await multiplayerService.addPlayerToRoom(roomCode, username);
         }
-      }
-    });
 
-    unsubscribeRef.current = unsubscribe;
-
-    return () => {
-      unsubscribe();
-      // Clean up room if host leaves
-      if (isHost) {
-        roomSync.cleanupRoom(roomCode);
-      } else {
-        roomSync.removePlayer(roomCode, username);
+        if (room) {
+          setRoomPlayers(room.players);
+          setMessages([{ sender: 'System', text: `Welcome to the lobby, ${username}!`, isUser: false }]);
+        }
+      } catch (error) {
+        console.error('Error initializing room:', error);
+        setMessages([{ sender: 'System', text: 'Error connecting to room. Please try again.', isUser: false }]);
       }
     };
-  }, [roomCode, username, isHost, onStartAuction, customTeamName]);
+
+    initializeRoom();
+
+    // Poll for room changes every 500ms
+    const pollInterval = setInterval(async () => {
+      try {
+        const room = await multiplayerService.getRoomByCode(roomCode);
+        if (room) {
+          setRoomPlayers(room.players);
+          
+          // Check if auction has started
+          if (room.status === 'auction_started' && room.auction_teams && room.auction_teams.length > 0) {
+            // Find user's team from the room teams
+            let userTeam = room.auction_teams.find((t: Team) => t.id === `custom-${username.toLowerCase()}`);
+            
+            // If custom team not found, try to find by any team matching criteria
+            if (!userTeam) {
+              userTeam = room.auction_teams.find((t: Team) => t.isUser === true);
+            }
+            
+            // If still not found, use first team as fallback
+            if (!userTeam) {
+              userTeam = room.auction_teams[0];
+            }
+            
+            if (userTeam) {
+              console.log('Auction started! User team:', userTeam);
+              onStartAuction(room.auction_teams, userTeam);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error polling room:', error);
+      }
+    }, 500);
+
+    pollIntervalRef.current = pollInterval;
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+      // Clean up room if host leaves
+      if (isHost) {
+        // Optionally implement room cleanup
+      } else {
+        multiplayerService.removePlayerFromRoom(roomCode, username);
+      }
+    };
+  }, [roomCode, username, isHost, onStartAuction]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -83,9 +123,9 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
     };
     setMessages(prev => [...prev, newMessage]);
     setChatInput('');
-  };
+  };;
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!selectedTeamId) return;
     let userTeamDetails: Omit<Team, 'budget' | 'players' | 'isAI' | 'isUser'>;
 
@@ -100,30 +140,43 @@ const RoomLobby: React.FC<RoomLobbyProps> = ({ roomCode, username, isHost, onSta
       userTeamDetails = TEAMS.find(t => t.id === selectedTeamId)!;
     }
     
-    const userTeamForAuction: Team = { ...userTeamDetails, budget: INITIAL_BUDGET, players: [], isUser: true, isAI: false };
+    // Create the user's team for auction
+    const userTeamForAuction: Team = { 
+      ...userTeamDetails, 
+      budget: INITIAL_BUDGET, 
+      players: [], 
+      isUser: true, 
+      isAI: false 
+    };
     
     // Build teams list from all players in room
     const allTeamsForAuction: Team[] = roomPlayers.map(player => {
-      let teamDetails = userTeamForAuction;
-      if (player.username !== username) {
-        // For other players, create a default team (they will select their own)
-        teamDetails = {
+      if (player.username === username) {
+        // This is the current user's team
+        return userTeamForAuction;
+      } else {
+        // For other players, create a placeholder team (they will update their selection)
+        return {
           id: `team-${player.username}`,
           name: `${player.username}'s Team`,
           logo: CUSTOM_TEAM_LOGO,
           budget: INITIAL_BUDGET,
           players: [],
-          isUser: player.username === username,
+          isUser: false,
           isAI: false
         };
       }
-      return teamDetails;
     });
 
-    // Update room state to auction started
-    roomSync.startAuction(roomCode, allTeamsForAuction);
-    
-    onStartAuction(allTeamsForAuction, userTeamForAuction);
+    try {
+      // Update room state to auction started in database
+      await multiplayerService.startAuction(roomCode, allTeamsForAuction);
+      
+      // Trigger the auction for this client
+      onStartAuction(allTeamsForAuction, userTeamForAuction);
+    } catch (error) {
+      console.error('Error starting auction:', error);
+    }
   };
   
   const copyToClipboard = () => {
