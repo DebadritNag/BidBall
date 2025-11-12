@@ -36,7 +36,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ initialTeams, userTeam, usern
     toggleMute,
     waitingForPlayers,
     playersReady
-  } = useAuction(initialTeams, userTeam, onAuctionEnd, roomCode);
+  } = useAuction(initialTeams, userTeam, onAuctionEnd, roomCode, username);
   
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);

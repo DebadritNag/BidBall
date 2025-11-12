@@ -14,7 +14,8 @@ const useAuction = (
   initialTeamsConfig: Team[],
   userTeamConfig: Team,
   onAuctionEnd: (teams: Team[]) => void,
-  roomCode?: string // Optional room code for multiplayer sync
+  roomCode?: string, // Optional room code for multiplayer sync
+  username?: string // Optional username for multiplayer
 ) => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
@@ -35,6 +36,7 @@ const useAuction = (
   const timerRef = useRef<number | null>(null);
   const aiActionTimeoutRef = useRef<number | null>(null);
   const userTeamId = userTeamConfig.id;
+  const usernameRef = useRef<string>(''); // Store username for multiplayer
 
   useEffect(() => {
     const fetchPlayerData = async () => {
@@ -339,8 +341,11 @@ const useAuction = (
     // For multiplayer: mark player as ready and wait for all players
     if (roomCode) {
       setWaitingForPlayers(true);
-      // Update player ready status
-      await multiplayerService.updateBiddingStatus(roomCode, userTeamConfig.name, true);
+      // Update player ready status - use username from parameter
+      const playerUsername = username || userTeamConfig.name;
+      await multiplayerService.updateBiddingStatus(roomCode, playerUsername, true);
+      
+      let checkInterval: any = null;
       
       // Subscribe to room changes to detect when all players are ready
       const checkAllReady = async () => {
@@ -354,6 +359,12 @@ const useAuction = (
         // Check if all players are ready
         if (readyPlayers.length === players.length && players.length > 0) {
           setWaitingForPlayers(false);
+          
+          // Clear the interval immediately
+          if (checkInterval) {
+            clearInterval(checkInterval);
+            checkInterval = null;
+          }
           
           // Load or create shuffled player order
           let shuffledPlayers = (room as any).auction_players as Player[] | null;
@@ -374,10 +385,14 @@ const useAuction = (
       
       // Check immediately and set up polling
       await checkAllReady();
-      const checkInterval = setInterval(checkAllReady, 1000);
+      checkInterval = setInterval(checkAllReady, 1000);
       
-      // Clean up interval after 30 seconds or when ready
-      setTimeout(() => clearInterval(checkInterval), 30000);
+      // Clean up interval after 30 seconds as a fallback
+      setTimeout(() => {
+        if (checkInterval) {
+          clearInterval(checkInterval);
+        }
+      }, 30000);
       
       return;
     }
