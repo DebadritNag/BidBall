@@ -319,6 +319,7 @@ const useAuction = (
   }, [timer, status]);
 
   const startAuction = useCallback(async () => {
+    console.log('[startAuction] Called! roomCode:', roomCode, 'allPlayers:', allPlayers?.length);
     // Set teams first
     setTeams(initialTeamsConfig);
     
@@ -365,10 +366,16 @@ const useAuction = (
       // Subscribe to room changes to detect when all players are ready
       const checkAllReady = async () => {
         const room = await multiplayerService.getRoomByCode(roomCode);
-        if (!room) return;
+        if (!room) {
+          console.log('[Ready Check] Room not found');
+          return;
+        }
+        
+        console.log('[Ready Check] Room status:', room.status);
         
         // If auction already started, stop checking
         if (room.status !== 'waiting') {
+          console.log('[Ready Check] Auction already started, stopping');
           if (readyCheckIntervalRef.current) {
             clearInterval(readyCheckIntervalRef.current);
             readyCheckIntervalRef.current = null;
@@ -378,10 +385,12 @@ const useAuction = (
         
         const players = Array.isArray(room.players) ? room.players : [];
         const readyPlayers = players.filter((p: any) => p.isReady);
+        console.log(`[Ready Check] ${readyPlayers.length}/${players.length} ready`, players);
         setPlayersReady(readyPlayers.map((p: any) => p.username));
         
-        // Check if all players are ready
+        // Check if all players are ready (including single player)
         if (readyPlayers.length === players.length && players.length > 0) {
+          console.log('[Ready Check] All players ready! Starting auction...');
           setWaitingForPlayers(false);
           
           // Clear the interval immediately
@@ -392,17 +401,25 @@ const useAuction = (
           
           // Load or create shuffled player order
           let shuffledPlayers = (room as any).auction_players as Player[] | null;
+          console.log('[Ready Check] Existing auction_players:', shuffledPlayers?.length || 0);
           
           if (!shuffledPlayers || shuffledPlayers.length === 0) {
             // First player ready: shuffle and store
+            console.log('[Ready Check] allPlayers available:', allPlayers?.length || 0);
             if (allPlayers && allPlayers.length > 0) {
               shuffledPlayers = [...allPlayers].sort(() => Math.random() - 0.5);
+              console.log('[Ready Check] Created shuffled list:', shuffledPlayers.length);
               await multiplayerService.initializeAuctionPlayers(roomCode, shuffledPlayers);
+            } else {
+              console.error('[Ready Check] No allPlayers available!');
             }
           }
           
           if (shuffledPlayers && shuffledPlayers.length > 0) {
+            console.log('[Ready Check] Calling startWithPlayers with', shuffledPlayers.length, 'players');
             startWithPlayers(shuffledPlayers);
+          } else {
+            console.error('[Ready Check] Cannot start - no shuffled players');
           }
         }
       };
